@@ -101,7 +101,22 @@ export const strings = {
   zoo: {
     title: 'הכלוב',
     slotEmpty: 'ריק',
-    cta: 'לזירה'
+    cta: 'לזירה',
+    search: 'חיפוש',
+    filter: 'סינון'
+  },
+  build: {
+    camp: 'מחנה',
+    cell: 'תא ייצור',
+    mast: 'מוט אנרגיה',
+    place: 'לחץ לאישור · ימני לביטול',
+    progress: 'בנייה…',
+    building: 'בונה'
+  },
+  queue: {
+    cancel: 'ביטול',
+    full: 'התור מלא',
+    progress: 'בהתקדמות'
   },
   win: {
     destroyBase: 'הבסיס נהרס — ניצחת!',

@@ -305,7 +305,8 @@ export class GameManager {
       primaryColor: '#FACC15',
       secondaryColor: '#854D0E',
       costDNA: 0,
-      costBiomass: 0
+      costBiomass: 0,
+      size: 3
     };
   }
 
@@ -599,7 +600,8 @@ export class GameManager {
         primaryColor: archetype.primaryColor,
         secondaryColor: archetype.secondaryColor,
         costDNA: archetype.costDNA,
-        costBiomass: archetype.costBiomass
+        costBiomass: archetype.costBiomass,
+        size: archetype.size
       };
       
       const angle = Math.random() * Math.PI * 2;

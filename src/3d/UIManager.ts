@@ -417,7 +417,7 @@ export class UIManager {
   ): void {
     this.trainCallbacks = callbacks;
     
-    // Build unit list (worker + 3 cheap units)
+    // Build unit list (worker + tier 1-2 units)
     const p0Units: Array<{
       name: string;
       cost: { dna: number; biomass: number };
@@ -429,47 +429,34 @@ export class UIManager {
         name: strings.panel.worker, 
         cost: { dna: GAME_CONSTANTS.WORKER_COST_DNA, biomass: GAME_CONSTANTS.WORKER_COST_BIOMASS }, 
         type: 'worker' 
-      },
-      ...armyRoster.filter(h => 
-        h.parent1.id === 'bat-echo' || h.parent2.id === 'bat-echo' ||
-        h.parent1.id === 'horn-deer' || h.parent2.id === 'horn-deer' ||
-        h.parent1.id === 'quill-snake' || h.parent2.id === 'quill-snake'
-      ).slice(0, 3).map(h => ({ 
-        name: h.name, 
-        cost: { dna: h.costDNA, biomass: h.costBiomass }, 
-        type: 'unit' as const, 
-        hybrid: h 
-      }))
+      }
     ];
     
-    // Add archetypes if not enough roster units
+    // Add tier 1-2 hybrids from roster (up to 3 slots)
+    const tier12Hybrids = armyRoster.filter(h => 
+      (h.parent1.researchTier <= 2 && h.parent2.researchTier <= 2)
+    ).slice(0, 3);
+    
+    for (const h of tier12Hybrids) {
+      p0Units.push({
+        name: h.name,
+        cost: { dna: h.costDNA, biomass: h.costBiomass },
+        type: 'unit',
+        hybrid: h
+      });
+    }
+    
+    // Fill remaining slots with tier 1-2 archetypes
     if (p0Units.length < 4) {
-      const batEcho = ANIMAL_ARCHETYPES.find(a => a.id === 'bat-echo');
-      const hornDeer = ANIMAL_ARCHETYPES.find(a => a.id === 'horn-deer');
-      const quillSnake = ANIMAL_ARCHETYPES.find(a => a.id === 'quill-snake');
+      const tier12Archetypes = ANIMAL_ARCHETYPES.filter(a => a.researchTier <= 2 && a.role === 'combat')
+        .slice(0, 4 - p0Units.length);
       
-      if (batEcho && p0Units.length === 1) {
-        p0Units.push({ 
-          name: batEcho.nameHebrew, 
-          cost: { dna: batEcho.costDNA, biomass: batEcho.costBiomass }, 
-          type: 'archetype', 
-          archetype: batEcho 
-        });
-      }
-      if (hornDeer && p0Units.length === 2) {
-        p0Units.push({ 
-          name: hornDeer.nameHebrew, 
-          cost: { dna: hornDeer.costDNA, biomass: hornDeer.costBiomass }, 
-          type: 'archetype', 
-          archetype: hornDeer 
-        });
-      }
-      if (quillSnake && p0Units.length === 3) {
-        p0Units.push({ 
-          name: quillSnake.nameHebrew, 
-          cost: { dna: quillSnake.costDNA, biomass: quillSnake.costBiomass }, 
-          type: 'archetype', 
-          archetype: quillSnake 
+      for (const archetype of tier12Archetypes) {
+        p0Units.push({
+          name: archetype.nameHebrew,
+          cost: { dna: archetype.costDNA, biomass: archetype.costBiomass },
+          type: 'archetype',
+          archetype
         });
       }
     }

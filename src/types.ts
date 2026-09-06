@@ -13,6 +13,8 @@ export interface AnimalArchetype {
   secondaryColor: string;
   costDNA: number;
   costBiomass: number;
+  size: number; // 1-10
+  researchTier: number; // 1-5
 }
 
 export interface HybridCreature {
@@ -31,6 +33,7 @@ export interface HybridCreature {
   secondaryColor: string;
   costDNA: number;
   costBiomass: number;
+  size: number; // max(parent1.size, parent2.size)
 }
 
 export interface ArmySlot {

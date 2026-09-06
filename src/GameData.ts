@@ -16,7 +16,9 @@ export const ANIMAL_ARCHETYPES: AnimalArchetype[] = animalsData.map(animal => ({
   primaryColor: generateColorFromId(animal.id, 0),
   secondaryColor: generateColorFromId(animal.id, 1),
   costDNA: animal.dnaCost,
-  costBiomass: animal.biomassCost
+  costBiomass: animal.biomassCost,
+  size: animal.size,
+  researchTier: animal.researchTier
 }));
 
 // Generate consistent colors from animal ID
@@ -57,6 +59,9 @@ export class GameData {
     const costDNA = Math.round((parent1.costDNA + parent2.costDNA) * 0.85);
     const costBiomass = Math.round((parent1.costBiomass + parent2.costBiomass) * 0.5);
     
+    // Size is max of parents
+    const size = Math.max(parent1.size, parent2.size);
+    
     return {
       id: `hybrid_${parent1.id}_${parent2.id}_${Date.now()}`,
       parent1,
@@ -72,7 +77,8 @@ export class GameData {
       primaryColor: parent1.primaryColor,
       secondaryColor: parent2.primaryColor,
       costDNA,
-      costBiomass
+      costBiomass,
+      size
     };
   }
 
