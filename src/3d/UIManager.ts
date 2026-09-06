@@ -706,7 +706,8 @@ export class UIManager {
       anotherBtn.style.transform = 'scale(1)';
     });
     anotherBtn.addEventListener('click', () => {
-      window.location.reload();
+      // Dispatch custom event for in-app battle reset
+      window.dispatchEvent(new CustomEvent('battle-rematch'));
     });
     buttonContainer.appendChild(anotherBtn);
     
@@ -731,8 +732,8 @@ export class UIManager {
       backBtn.style.transform = 'scale(1)';
     });
     backBtn.addEventListener('click', () => {
-      // For MVP, just reload - in full game would navigate to cage/menu
-      window.location.reload();
+      // Dispatch custom event for navigation to Cage
+      window.dispatchEvent(new CustomEvent('navigate-to-cage'));
     });
     buttonContainer.appendChild(backBtn);
     
@@ -762,6 +763,17 @@ export class UIManager {
     if (this.helpOverlay) {
       document.body.removeChild(this.helpOverlay);
       this.helpOverlay = null;
+    }
+  }
+  
+  public closeGameOver(): void {
+    if (this.gameOverEl) {
+      document.body.removeChild(this.gameOverEl);
+      this.gameOverEl = null;
+      // Restore HUD z-index
+      if (this.container) {
+        this.container.style.zIndex = '1000';
+      }
     }
   }
   

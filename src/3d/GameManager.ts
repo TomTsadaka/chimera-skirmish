@@ -50,6 +50,9 @@ export class GameManager {
     // Setup keyboard shortcuts
     this.setupKeyboardShortcuts();
     
+    // Listen for game-over button events
+    window.addEventListener('battle-rematch', this.handleBattleRematch.bind(this));
+    
     // Listen for resource gathering (custom event)
     // @ts-ignore - custom event type
     this.scene.addEventListener('resource-gathered', this.onResourceGathered.bind(this));
@@ -133,7 +136,7 @@ export class GameManager {
     this.camera.panTo(avgX, avgZ);
   }
 
-  public start(): void {
+  public start(selectedHybrid: HybridCreature | null = null): void {
     // Initialize economy
     this.playerResources = { 
       biomass: GAME_CONSTANTS.STARTING_BIOMASS, 
@@ -144,8 +147,12 @@ export class GameManager {
       dna: GAME_CONSTANTS.STARTING_DNA 
     };
     
-    // Create default army roster (for MVP, use 3 pre-made hybrids)
-    this.createDefaultArmyRoster();
+    // Create army roster (use selected hybrid if provided, otherwise default)
+    if (selectedHybrid) {
+      this.armyRoster = [selectedHybrid];
+    } else {
+      this.createDefaultArmyRoster();
+    }
     
     // Spawn structures and units
     this.spawnHQs();
@@ -170,6 +177,39 @@ export class GameManager {
     this.minimap.show();
     
     this.gameEnded = false;
+  }
+  
+  private handleBattleRematch(): void {
+    console.log('[GameManager] Handling battle rematch - full reset');
+    
+    // Close game-over modal
+    this.uiManager.closeGameOver();
+    
+    // Clear all units
+    for (const unit of [...this.playerUnits, ...this.enemyUnits]) {
+      unit.destroy();
+    }
+    this.playerUnits = [];
+    this.enemyUnits = [];
+    this.selectedUnits = [];
+    
+    // Clear HQs
+    this.playerHQ.destroy();
+    this.enemyHQ.destroy();
+    
+    // Clear resource nodes
+    for (const node of this.resourceNodes) {
+      node.destroy();
+    }
+    this.resourceNodes = [];
+    
+    // Reset timers
+    this.dnaTrickleTimer = 0;
+    this.aiUpdateTimer = 0;
+    
+    // Full restart
+    this.start();
+    console.log('[GameManager] Battle rematch complete');
   }
 
   private createDefaultArmyRoster(): void {

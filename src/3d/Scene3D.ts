@@ -3,6 +3,7 @@ import { RTSCamera } from './RTSCamera';
 import { InputManager } from './InputManager';
 import { GameManager } from './GameManager';
 import { Terrain } from './Terrain';
+import { HybridCreature } from '../types';
 
 export class Scene3D {
   private renderer: THREE.WebGLRenderer;
@@ -100,9 +101,9 @@ export class Scene3D {
     this.renderer.setSize(width, height);
   }
 
-  public start(): void {
+  public start(selectedHybrid: HybridCreature | null = null): void {
     this.isRunning = true;
-    this.gameManager.start();
+    this.gameManager.start(selectedHybrid);
     this.animate();
   }
 
