@@ -1,0 +1,30 @@
+{
+  "name": "chimera-skirmish",
+  "version": "1.0.0",
+  "description": "Playable browser RTS prototype: fuse animal archetypes into hybrids and skirmish vs AI. Original IP inspired by Impossible Creatures concepts — not a clone.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TomTsadaka/chimera-skirmish.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/TomTsadaka/chimera-skirmish/issues"
+  },
+  "homepage": "https://github.com/TomTsadaka/chimera-skirmish#readme",
+  "devDependencies": {
+    "@types/node": "^26.4.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2"
+  },
+  "dependencies": {
+    "phaser": "^4.2.1"
+  }
+}
