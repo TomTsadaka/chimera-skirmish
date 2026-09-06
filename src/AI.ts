@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { Unit } from './Unit';
 import { Building } from './Building';
 import { ResourceNode } from './ResourceNode';
-import { EconomyState } from './types';
+import { EconomyState, AnimalArchetype } from './types';
 import { GAME_CONSTANTS, getAggroRadius, getLeashDistance } from './constants';
 import { ANIMAL_ARCHETYPES, GameData } from './GameData';
 
@@ -110,15 +110,20 @@ export class AI {
       
       const workers = this.units.filter(u => u.role === 'worker').length;
       
-      // Maintain a good worker count
-      if (workers < 6 && this.resources.biomass >= GAME_CONSTANTS.WORKER_COST_BIOMASS) {
+      // Maintain a good worker count (2-4 workers)
+      if (workers < 4 && 
+          this.resources.dna >= GAME_CONSTANTS.WORKER_COST_DNA &&
+          this.resources.biomass >= GAME_CONSTANTS.WORKER_COST_BIOMASS) {
         this.trainWorker();
       }
       // Train combat units if we have enough resources and workers
-      else if (workers >= 4 && 
-               this.resources.biomass >= GAME_CONSTANTS.COMBAT_UNIT_COST_BIOMASS &&
-               this.resources.energy >= GAME_CONSTANTS.COMBAT_UNIT_COST_ENERGY) {
-        this.trainCombatUnit();
+      else if (workers >= 2) {
+        // Pick a random archetype and train if we can afford it
+        const archetype = Phaser.Math.RND.pick(ANIMAL_ARCHETYPES);
+        if (this.resources.dna >= archetype.costDNA &&
+            this.resources.biomass >= archetype.costBiomass) {
+          this.trainCombatUnit(archetype);
+        }
       }
     }
   }
@@ -155,7 +160,9 @@ export class AI {
   }
   
   private trainWorker(): void {
-    if (this.resources.biomass >= GAME_CONSTANTS.WORKER_COST_BIOMASS) {
+    if (this.resources.dna >= GAME_CONSTANTS.WORKER_COST_DNA &&
+        this.resources.biomass >= GAME_CONSTANTS.WORKER_COST_BIOMASS) {
+      this.resources.dna -= GAME_CONSTANTS.WORKER_COST_DNA;
       this.resources.biomass -= GAME_CONSTANTS.WORKER_COST_BIOMASS;
       
       const angle = Math.random() * Math.PI * 2;
@@ -176,7 +183,9 @@ export class AI {
         specialPrimary: '',
         specialSecondary: '',
         primaryColor: '#FACC15',
-        secondaryColor: '#854D0E'
+        secondaryColor: '#854D0E',
+        costDNA: 0,
+        costBiomass: 0
       };
       
       const worker = new Unit(this.hq.scene, x, y, workerCreature, 'enemy', 'worker', this.hq);
@@ -185,11 +194,11 @@ export class AI {
     }
   }
   
-  private trainCombatUnit(): void {
-    if (this.resources.biomass >= GAME_CONSTANTS.COMBAT_UNIT_COST_BIOMASS &&
-        this.resources.energy >= GAME_CONSTANTS.COMBAT_UNIT_COST_ENERGY) {
-      this.resources.biomass -= GAME_CONSTANTS.COMBAT_UNIT_COST_BIOMASS;
-      this.resources.energy -= GAME_CONSTANTS.COMBAT_UNIT_COST_ENERGY;
+  private trainCombatUnit(archetype: AnimalArchetype): void {
+    if (this.resources.dna >= archetype.costDNA &&
+        this.resources.biomass >= archetype.costBiomass) {
+      this.resources.dna -= archetype.costDNA;
+      this.resources.biomass -= archetype.costBiomass;
       
       const angle = Math.random() * Math.PI * 2;
       const radius = 100;

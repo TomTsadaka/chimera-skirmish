@@ -11,6 +11,8 @@ export interface AnimalArchetype {
   special: string;
   primaryColor: string;
   secondaryColor: string;
+  costDNA: number;
+  costBiomass: number;
 }
 
 export interface HybridCreature {
@@ -27,6 +29,8 @@ export interface HybridCreature {
   specialSecondary: string;
   primaryColor: string;
   secondaryColor: string;
+  costDNA: number;
+  costBiomass: number;
 }
 
 export interface ArmySlot {
@@ -38,7 +42,7 @@ export type GamePhase = 'forge' | 'army' | 'battle' | 'gameover';
 
 // Economy System Types
 export interface ResourceType {
-  id: 'biomass' | 'energy';
+  id: 'biomass' | 'dna';
   name: string;
   nameHebrew: string;
   color: number;
@@ -46,7 +50,7 @@ export interface ResourceType {
 
 export interface ResourceNode {
   id: string;
-  type: 'biomass' | 'energy';
+  type: 'biomass';
   x: number;
   y: number;
   amount: number;
@@ -55,7 +59,7 @@ export interface ResourceNode {
 
 export interface EconomyState {
   biomass: number;
-  energy: number;
+  dna: number;
 }
 
 export type UnitRole = 'worker' | 'combat';

@@ -71,12 +71,12 @@ export class Minimap {
   ): void {
     this.mapGraphics.clear();
     
-    // Draw resource nodes
+      // Draw resource nodes
     if (resourceNodes) {
       for (const node of resourceNodes) {
         const x = node.x * this.scaleX;
         const y = node.y * this.scaleY;
-        const nodeColor = node.nodeData.type === 'biomass' ? 0x22C55E : 0x3B82F6;
+        const nodeColor = 0x22C55E; // Green for biomass
         this.mapGraphics.fillStyle(nodeColor, 0.6);
         this.mapGraphics.fillCircle(x, y, 4);
       }

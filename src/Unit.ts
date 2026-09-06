@@ -15,7 +15,7 @@ export class Unit extends Phaser.GameObjects.Container {
   // Worker-specific properties
   public targetResourceNode: ResourceNode | null = null;
   public homeBuilding: Building | null = null;
-  public carryingResource: { type: 'biomass' | 'energy'; amount: number } | null = null;
+  public carryingBiomass: number = 0;
   public gatherState: 'idle' | 'moving_to_resource' | 'gathering' | 'returning' | 'moving_to_dropoff' = 'idle';
   private gatherTimer: number = 0;
   
@@ -216,10 +216,7 @@ export class Unit extends Phaser.GameObjects.Container {
         if (this.gatherTimer >= GAME_CONSTANTS.WORKER_GATHER_INTERVAL) {
           if (!this.targetResourceNode.isEmpty()) {
             const gathered = this.targetResourceNode.gather(GAME_CONSTANTS.WORKER_GATHER_RATE);
-            this.carryingResource = {
-              type: this.targetResourceNode.nodeData.type,
-              amount: gathered
-            };
+            this.carryingBiomass = gathered;
             this.gatherState = 'returning';
             this.moveToPosition(this.homeBuilding.x, this.homeBuilding.y);
           } else {
@@ -234,13 +231,12 @@ export class Unit extends Phaser.GameObjects.Container {
       case 'moving_to_dropoff':
         if (distanceToHome < 50) {
           // Drop off resources
-          if (this.carryingResource) {
+          if (this.carryingBiomass > 0) {
             this.scene.events.emit('resource-gathered', {
               team: this.team,
-              type: this.carryingResource.type,
-              amount: this.carryingResource.amount
+              amount: this.carryingBiomass
             });
-            this.carryingResource = null;
+            this.carryingBiomass = 0;
           }
           
           // Go back to resource node if it still has resources

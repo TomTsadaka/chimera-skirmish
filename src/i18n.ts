@@ -91,8 +91,8 @@ export const strings = {
   economy: {
     biomass: 'ביומסה',
     biomassEn: 'Biomass',
-    energy: 'אנרגיה',
-    energyEn: 'Energy',
+    dna: 'DNA',
+    dnaEn: 'DNA',
     resources: 'משאבים',
     trainWorker: 'אמן עובד',
     trainUnit: 'אמן לוחם',
@@ -102,7 +102,7 @@ export const strings = {
     hq: 'מטה ראשי',
     hqDestroyed: 'המטה הושמד!',
     notEnoughResources: 'אין מספיק משאבים',
-    workerInfo: 'עובד - אוסף משאבים',
+    workerInfo: 'עובד - אוסף ביומסה',
     unitInfo: 'לוחם - יחידת קרב'
   }
 };

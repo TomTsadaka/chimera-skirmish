@@ -39,22 +39,22 @@ export const GAME_CONSTANTS = {
   // Unit constants
   UNIT_SIZE: 30, // base size for units
   
-  // Economy constants
-  STARTING_BIOMASS: 200,
-  STARTING_ENERGY: 150,
-  STARTING_WORKERS: 4,
+  // Economy constants (GeneLab numbers)
+  STARTING_BIOMASS: 100,
+  STARTING_DNA: 80,
+  STARTING_WORKERS: 2,
   
-  WORKER_COST_BIOMASS: 50,
-  WORKER_COST_ENERGY: 0,
-  COMBAT_UNIT_COST_BIOMASS: 75,
-  COMBAT_UNIT_COST_ENERGY: 50,
+  WORKER_COST_DNA: 30,
+  WORKER_COST_BIOMASS: 40,
   
-  WORKER_GATHER_RATE: 10, // resources per trip
-  WORKER_GATHER_INTERVAL: 3000, // milliseconds per trip
+  WORKER_GATHER_RATE: 8, // biomass per trip
+  WORKER_GATHER_INTERVAL: 4000, // milliseconds per round trip (~4s)
   WORKER_SPEED: 1.5, // movement speed multiplier
   
-  RESOURCE_NODE_BIOMASS_AMOUNT: 1500,
-  RESOURCE_NODE_ENERGY_AMOUNT: 1200,
+  DNA_TRICKLE_RATE: 2, // DNA per tick
+  DNA_TRICKLE_INTERVAL: 5000, // milliseconds per tick (5s)
+  
+  RESOURCE_NODE_BIOMASS_AMOUNT: 2000,
   
   HQ_HP: 500,
   HQ_SIZE: 60,

@@ -13,7 +13,9 @@ export const ANIMAL_ARCHETYPES: AnimalArchetype[] = [
     vision: 7,
     special: 'fog reveal small AoE',
     primaryColor: '#4a4a4a',
-    secondaryColor: '#6b5b95'
+    secondaryColor: '#6b5b95',
+    costDNA: 40,
+    costBiomass: 20
   },
   {
     id: 'basalt-rhino',
@@ -27,7 +29,9 @@ export const ANIMAL_ARCHETYPES: AnimalArchetype[] = [
     vision: 3,
     special: 'shield shove',
     primaryColor: '#3e3e3e',
-    secondaryColor: '#5d5d5d'
+    secondaryColor: '#5d5d5d',
+    costDNA: 100,
+    costBiomass: 60
   },
   {
     id: 'quill-snake',
@@ -41,7 +45,9 @@ export const ANIMAL_ARCHETYPES: AnimalArchetype[] = [
     vision: 4,
     special: 'poison DoT',
     primaryColor: '#2ecc71',
-    secondaryColor: '#27ae60'
+    secondaryColor: '#27ae60',
+    costDNA: 70,
+    costBiomass: 25
   },
   {
     id: 'vinegar-eagle',
@@ -55,7 +61,9 @@ export const ANIMAL_ARCHETYPES: AnimalArchetype[] = [
     vision: 6,
     special: 'dive (+dmg, CD)',
     primaryColor: '#e67e22',
-    secondaryColor: '#d35400'
+    secondaryColor: '#d35400',
+    costDNA: 80,
+    costBiomass: 40
   },
   {
     id: 'crystal-crab',
@@ -69,7 +77,9 @@ export const ANIMAL_ARCHETYPES: AnimalArchetype[] = [
     vision: 3,
     special: 'armor + light reflect',
     primaryColor: '#3498db',
-    secondaryColor: '#5dade2'
+    secondaryColor: '#5dade2',
+    costDNA: 85,
+    costBiomass: 50
   },
   {
     id: 'ink-octopus',
@@ -83,7 +93,9 @@ export const ANIMAL_ARCHETYPES: AnimalArchetype[] = [
     vision: 4,
     special: 'ink cloud slow',
     primaryColor: '#9b59b6',
-    secondaryColor: '#8e44ad'
+    secondaryColor: '#8e44ad',
+    costDNA: 65,
+    costBiomass: 35
   },
   {
     id: 'horn-deer',
@@ -97,7 +109,9 @@ export const ANIMAL_ARCHETYPES: AnimalArchetype[] = [
     vision: 5,
     special: 'ram shove',
     primaryColor: '#a0826d',
-    secondaryColor: '#c9b29a'
+    secondaryColor: '#c9b29a',
+    costDNA: 55,
+    costBiomass: 30
   },
   {
     id: 'thunder-frog',
@@ -111,7 +125,9 @@ export const ANIMAL_ARCHETYPES: AnimalArchetype[] = [
     vision: 6,
     special: 'shock hop AoE',
     primaryColor: '#f1c40f',
-    secondaryColor: '#f39c12'
+    secondaryColor: '#f39c12',
+    costDNA: 90,
+    costBiomass: 45
   }
 ];
 
@@ -137,6 +153,10 @@ export class GameData {
     
     const name = this.generateHybridName(parent1, parent2);
     
+    // Calculate production costs using fusion formula
+    const costDNA = Math.round((parent1.costDNA + parent2.costDNA) * 0.85);
+    const costBiomass = Math.round((parent1.costBiomass + parent2.costBiomass) * 0.5);
+    
     return {
       id: `hybrid_${parent1.id}_${parent2.id}_${Date.now()}`,
       parent1,
@@ -150,7 +170,9 @@ export class GameData {
       specialPrimary,
       specialSecondary,
       primaryColor: parent1.primaryColor,
-      secondaryColor: parent2.primaryColor
+      secondaryColor: parent2.primaryColor,
+      costDNA,
+      costBiomass
     };
   }
 

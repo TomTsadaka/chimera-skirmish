@@ -33,13 +33,14 @@ export class BattleScene extends Phaser.Scene {
   private pointerInWindow: boolean = true;
   
   // Economy system
-  private playerResources: EconomyState = { biomass: 0, energy: 0 };
-  private enemyResources: EconomyState = { biomass: 0, energy: 0 };
+  private playerResources: EconomyState = { biomass: 0, dna: 0 };
+  private enemyResources: EconomyState = { biomass: 0, dna: 0 };
   private playerHQ!: Building;
   private enemyHQ!: Building;
   private resourceNodes: ResourceNode[] = [];
-  private resourceTexts: { biomass: Phaser.GameObjects.Text; energy: Phaser.GameObjects.Text } | null = null;
+  private resourceTexts: { biomass: Phaser.GameObjects.Text; dna: Phaser.GameObjects.Text } | null = null;
   private trainPanel: Phaser.GameObjects.Container | null = null;
+  private dnaTrickleTimer: number = 0;
   
   private readonly MAP_WIDTH = GAME_CONSTANTS.MAP_WIDTH;
   private readonly MAP_HEIGHT = GAME_CONSTANTS.MAP_HEIGHT;
@@ -67,12 +68,13 @@ export class BattleScene extends Phaser.Scene {
     // Initialize economy
     this.playerResources = { 
       biomass: GAME_CONSTANTS.STARTING_BIOMASS, 
-      energy: GAME_CONSTANTS.STARTING_ENERGY 
+      dna: GAME_CONSTANTS.STARTING_DNA 
     };
     this.enemyResources = { 
       biomass: GAME_CONSTANTS.STARTING_BIOMASS, 
-      energy: GAME_CONSTANTS.STARTING_ENERGY 
+      dna: GAME_CONSTANTS.STARTING_DNA 
     };
+    this.dnaTrickleTimer = 0;
     
     // Destroy old fog/minimap if they exist
     if (this.fogOfWar) {
@@ -179,14 +181,14 @@ export class BattleScene extends Phaser.Scene {
       fontStyle: 'bold'
     }).setOrigin(0, 0.5).setScrollFactor(0);
     
-    const energyText = this.add.text(startX + 110, startY, `${strings.economy.energy}: ${this.playerResources.energy}`, {
+    const dnaText = this.add.text(startX + 110, startY, `${strings.economy.dna}: ${this.playerResources.dna}`, {
       fontSize: '14px',
-      color: '#3B82F6',
+      color: '#9b59b6',
       fontFamily: 'Arial',
       fontStyle: 'bold'
     }).setOrigin(0, 0.5).setScrollFactor(0);
     
-    this.resourceTexts = { biomass: biomassText, energy: energyText };
+    this.resourceTexts = { biomass: biomassText, dna: dnaText };
   }
   
   private createTrainPanel(): void {
@@ -222,9 +224,9 @@ export class BattleScene extends Phaser.Scene {
     }).setOrigin(0.5).setScrollFactor(0);
     this.trainPanel.add(workerText);
     
-    const workerCost = this.add.text(panelX + panelWidth / 2, panelY + 70, `${GAME_CONSTANTS.WORKER_COST_BIOMASS}B`, {
+    const workerCost = this.add.text(panelX + panelWidth / 2, panelY + 70, `${GAME_CONSTANTS.WORKER_COST_DNA}D ${GAME_CONSTANTS.WORKER_COST_BIOMASS}B`, {
       fontSize: '11px',
-      color: '#22C55E',
+      color: '#ffffff',
       fontFamily: 'Arial'
     }).setOrigin(0.5).setScrollFactor(0);
     this.trainPanel.add(workerCost);
@@ -242,7 +244,12 @@ export class BattleScene extends Phaser.Scene {
     }).setOrigin(0.5).setScrollFactor(0);
     this.trainPanel.add(unitText);
     
-    const unitCost = this.add.text(panelX + panelWidth / 2, panelY + 125, `${GAME_CONSTANTS.COMBAT_UNIT_COST_BIOMASS}B ${GAME_CONSTANTS.COMBAT_UNIT_COST_ENERGY}E`, {
+    // Get hybrid cost from registry
+    const hybrid = this.registry.get('lastHybrid') as HybridCreature;
+    const costDNA = hybrid?.costDNA || 70;
+    const costBiomass = hybrid?.costBiomass || 35;
+    
+    const unitCost = this.add.text(panelX + panelWidth / 2, panelY + 125, `${costDNA}D ${costBiomass}B`, {
       fontSize: '11px',
       color: '#ffffff',
       fontFamily: 'Arial'
@@ -428,17 +435,17 @@ export class BattleScene extends Phaser.Scene {
   
   private spawnResourceNodes(): void {
     const nodes: ResourceNodeType[] = [
-      // Left side (near player)
-      { id: 'b1', type: 'biomass', x: 400, y: 300, amount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT, maxAmount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT },
-      { id: 'e1', type: 'energy', x: 400, y: this.MAP_HEIGHT - 300, amount: GAME_CONSTANTS.RESOURCE_NODE_ENERGY_AMOUNT, maxAmount: GAME_CONSTANTS.RESOURCE_NODE_ENERGY_AMOUNT },
+      // Left side (near player) - biomass only
+      { id: 'b1', type: 'biomass', x: 400, y: 400, amount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT, maxAmount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT },
+      { id: 'b2', type: 'biomass', x: 500, y: this.MAP_HEIGHT - 400, amount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT, maxAmount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT },
       
-      // Center
-      { id: 'b2', type: 'biomass', x: this.MAP_WIDTH / 2, y: 400, amount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT, maxAmount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT },
-      { id: 'e2', type: 'energy', x: this.MAP_WIDTH / 2, y: this.MAP_HEIGHT - 400, amount: GAME_CONSTANTS.RESOURCE_NODE_ENERGY_AMOUNT, maxAmount: GAME_CONSTANTS.RESOURCE_NODE_ENERGY_AMOUNT },
+      // Center - biomass only
+      { id: 'b3', type: 'biomass', x: this.MAP_WIDTH / 2, y: 350, amount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT, maxAmount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT },
+      { id: 'b4', type: 'biomass', x: this.MAP_WIDTH / 2, y: this.MAP_HEIGHT - 350, amount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT, maxAmount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT },
       
-      // Right side (near enemy)
-      { id: 'b3', type: 'biomass', x: this.MAP_WIDTH - 400, y: 300, amount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT, maxAmount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT },
-      { id: 'e3', type: 'energy', x: this.MAP_WIDTH - 400, y: this.MAP_HEIGHT - 300, amount: GAME_CONSTANTS.RESOURCE_NODE_ENERGY_AMOUNT, maxAmount: GAME_CONSTANTS.RESOURCE_NODE_ENERGY_AMOUNT },
+      // Right side (near enemy) - biomass only
+      { id: 'b5', type: 'biomass', x: this.MAP_WIDTH - 400, y: 400, amount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT, maxAmount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT },
+      { id: 'b6', type: 'biomass', x: this.MAP_WIDTH - 500, y: this.MAP_HEIGHT - 400, amount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT, maxAmount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT },
     ];
     
     for (const nodeData of nodes) {
@@ -488,7 +495,9 @@ export class BattleScene extends Phaser.Scene {
       specialPrimary: '',
       specialSecondary: '',
       primaryColor: '#FACC15',
-      secondaryColor: '#854D0E'
+      secondaryColor: '#854D0E',
+      costDNA: 0,
+      costBiomass: 0
     };
   }
 
@@ -527,24 +536,26 @@ export class BattleScene extends Phaser.Scene {
     }
   }
   
-  private onResourceGathered(data: { team: 'player' | 'enemy'; type: 'biomass' | 'energy'; amount: number }): void {
+  private onResourceGathered(data: { team: 'player' | 'enemy'; amount: number }): void {
     if (data.team === 'player') {
-      this.playerResources[data.type] += data.amount;
+      this.playerResources.biomass += data.amount;
       this.updateResourceUI();
     } else {
-      this.enemyResources[data.type] += data.amount;
+      this.enemyResources.biomass += data.amount;
     }
   }
   
   private updateResourceUI(): void {
     if (this.resourceTexts) {
       this.resourceTexts.biomass.setText(`${strings.economy.biomass}: ${this.playerResources.biomass}`);
-      this.resourceTexts.energy.setText(`${strings.economy.energy}: ${this.playerResources.energy}`);
+      this.resourceTexts.dna.setText(`${strings.economy.dna}: ${this.playerResources.dna}`);
     }
   }
   
   private trainWorker(): void {
-    if (this.playerResources.biomass >= GAME_CONSTANTS.WORKER_COST_BIOMASS) {
+    if (this.playerResources.dna >= GAME_CONSTANTS.WORKER_COST_DNA &&
+        this.playerResources.biomass >= GAME_CONSTANTS.WORKER_COST_BIOMASS) {
+      this.playerResources.dna -= GAME_CONSTANTS.WORKER_COST_DNA;
       this.playerResources.biomass -= GAME_CONSTANTS.WORKER_COST_BIOMASS;
       this.updateResourceUI();
       
@@ -561,14 +572,14 @@ export class BattleScene extends Phaser.Scene {
   }
   
   private trainCombatUnit(): void {
-    if (this.playerResources.biomass >= GAME_CONSTANTS.COMBAT_UNIT_COST_BIOMASS &&
-        this.playerResources.energy >= GAME_CONSTANTS.COMBAT_UNIT_COST_ENERGY) {
-      this.playerResources.biomass -= GAME_CONSTANTS.COMBAT_UNIT_COST_BIOMASS;
-      this.playerResources.energy -= GAME_CONSTANTS.COMBAT_UNIT_COST_ENERGY;
+    // Use the player's hybrid from registry
+    const hybrid = this.registry.get('lastHybrid') as HybridCreature;
+    
+    if (this.playerResources.dna >= hybrid.costDNA &&
+        this.playerResources.biomass >= hybrid.costBiomass) {
+      this.playerResources.dna -= hybrid.costDNA;
+      this.playerResources.biomass -= hybrid.costBiomass;
       this.updateResourceUI();
-      
-      // Use the player's hybrid from registry
-      const hybrid = this.registry.get('lastHybrid') as HybridCreature;
       
       // Spawn unit near HQ
       const angle = Math.random() * Math.PI * 2;
@@ -766,6 +777,15 @@ export class BattleScene extends Phaser.Scene {
   update(_time: number, delta: number): void {
     if (!this.gameEnded) {
       this.updateCameraPan(delta);
+      
+      // DNA trickle for both teams
+      this.dnaTrickleTimer += delta;
+      if (this.dnaTrickleTimer >= GAME_CONSTANTS.DNA_TRICKLE_INTERVAL) {
+        this.dnaTrickleTimer -= GAME_CONSTANTS.DNA_TRICKLE_INTERVAL;
+        this.playerResources.dna += GAME_CONSTANTS.DNA_TRICKLE_RATE;
+        this.enemyResources.dna += GAME_CONSTANTS.DNA_TRICKLE_RATE;
+        this.updateResourceUI();
+      }
     }
 
     this.playerUnits = this.playerUnits.filter(unit => {

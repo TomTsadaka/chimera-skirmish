@@ -20,7 +20,7 @@ export class ResourceNode extends Phaser.GameObjects.Container {
     this.drawBody();
     this.add(this.bodyGraphics);
 
-    const label = nodeData.type === 'biomass' ? 'B' : 'E';
+    const label = 'B'; // Biomass only
     this.labelText = new Phaser.GameObjects.Text(scene, 0, -5, label, {
       fontSize: '18px',
       color: '#ffffff',
@@ -42,8 +42,8 @@ export class ResourceNode extends Phaser.GameObjects.Container {
   private drawBody(): void {
     this.bodyGraphics.clear();
     
-    const size = 20;
-    const color = this.nodeData.type === 'biomass' ? 0x22C55E : 0x3B82F6;
+    const size = this.nodeData.type === 'biomass' ? 20 : 20;
+    const color = 0x22C55E; // Green for biomass
     
     // Main resource node
     this.bodyGraphics.fillStyle(color, 0.7);
