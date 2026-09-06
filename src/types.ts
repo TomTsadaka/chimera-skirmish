@@ -1,12 +1,13 @@
 export interface AnimalArchetype {
   id: string;
   name: string;
+  nameHebrew: string;
+  role: string;
   hp: number;
   speed: number;
   attack: number;
-  attackRange: number;
-  isRanged: boolean;
-  specialTag: string;
+  range: number;
+  special: string;
   primaryColor: string;
   secondaryColor: string;
 }
@@ -19,9 +20,9 @@ export interface HybridCreature {
   hp: number;
   speed: number;
   attack: number;
-  attackRange: number;
-  isRanged: boolean;
-  specialTag: string;
+  range: number;
+  specialPrimary: string;
+  specialSecondary: string;
   primaryColor: string;
   secondaryColor: string;
 }

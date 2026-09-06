@@ -2,89 +2,130 @@ import { AnimalArchetype, HybridCreature } from './types';
 
 export const ANIMAL_ARCHETYPES: AnimalArchetype[] = [
   {
-    id: 'shadowpaw',
-    name: 'Shadowpaw',
-    hp: 80,
-    speed: 100,
-    attack: 15,
-    attackRange: 50,
-    isRanged: false,
-    specialTag: 'agile',
-    primaryColor: '#2c3e50',
-    secondaryColor: '#34495e'
-  },
-  {
-    id: 'skystalker',
-    name: 'Skystalker',
+    id: 'bat-echo',
+    name: 'Bat-Echo',
+    nameHebrew: 'עטלף-הד',
+    role: 'scout',
     hp: 50,
-    speed: 150,
-    attack: 12,
-    attackRange: 200,
-    isRanged: true,
-    specialTag: 'aerial',
-    primaryColor: '#3498db',
-    secondaryColor: '#2980b9'
+    speed: 9,
+    attack: 10,
+    range: 1,
+    special: 'fog reveal small AoE',
+    primaryColor: '#4a4a4a',
+    secondaryColor: '#6b5b95'
   },
   {
-    id: 'ironjaw',
-    name: 'Ironjaw',
-    hp: 120,
-    speed: 60,
-    attack: 20,
-    attackRange: 60,
-    isRanged: false,
-    specialTag: 'armored',
-    primaryColor: '#16a085',
-    secondaryColor: '#1abc9c'
-  },
-  {
-    id: 'sparkshell',
-    name: 'Sparkshell',
-    hp: 60,
-    speed: 70,
+    id: 'basalt-rhino',
+    name: 'Basalt-Rhino',
+    nameHebrew: 'קרנף-בזלת',
+    role: 'tank',
+    hp: 180,
+    speed: 3,
     attack: 18,
-    attackRange: 40,
-    isRanged: false,
-    specialTag: 'electric',
-    primaryColor: '#f39c12',
-    secondaryColor: '#f1c40f'
+    range: 1,
+    special: 'shield shove',
+    primaryColor: '#3e3e3e',
+    secondaryColor: '#5d5d5d'
   },
   {
-    id: 'hornguard',
-    name: 'Hornguard',
-    hp: 100,
-    speed: 80,
-    attack: 16,
-    attackRange: 50,
-    isRanged: false,
-    specialTag: 'defensive',
-    primaryColor: '#8e44ad',
-    secondaryColor: '#9b59b6'
+    id: 'quill-snake',
+    name: 'Quill-Snake',
+    nameHebrew: 'נחש-זיפים',
+    role: 'assassin',
+    hp: 55,
+    speed: 8,
+    attack: 28,
+    range: 1,
+    special: 'poison DoT',
+    primaryColor: '#2ecc71',
+    secondaryColor: '#27ae60'
   },
   {
-    id: 'voltfin',
-    name: 'Voltfin',
+    id: 'vinegar-eagle',
+    name: 'Vinegar-Eagle',
+    nameHebrew: 'עיט-חומץ',
+    role: 'mobile ranged',
     hp: 70,
-    speed: 90,
-    attack: 14,
-    attackRange: 150,
-    isRanged: true,
-    specialTag: 'aquatic',
-    primaryColor: '#e74c3c',
-    secondaryColor: '#c0392b'
+    speed: 8,
+    attack: 16,
+    range: 4,
+    special: 'dive (+dmg, CD)',
+    primaryColor: '#e67e22',
+    secondaryColor: '#d35400'
+  },
+  {
+    id: 'crystal-crab',
+    name: 'Crystal-Crab',
+    nameHebrew: 'סרטן-גביש',
+    role: 'defense',
+    hp: 160,
+    speed: 2,
+    attack: 12,
+    range: 1,
+    special: 'armor + light reflect',
+    primaryColor: '#3498db',
+    secondaryColor: '#5dade2'
+  },
+  {
+    id: 'ink-octopus',
+    name: 'Ink-Octopus',
+    nameHebrew: 'תמנון-דיו',
+    role: 'control',
+    hp: 90,
+    speed: 4,
+    attack: 11,
+    range: 3,
+    special: 'ink cloud slow',
+    primaryColor: '#9b59b6',
+    secondaryColor: '#8e44ad'
+  },
+  {
+    id: 'horn-deer',
+    name: 'Horn-Deer',
+    nameHebrew: 'צבי-קרן',
+    role: 'skirmish',
+    hp: 85,
+    speed: 7,
+    attack: 20,
+    range: 2,
+    special: 'ram shove',
+    primaryColor: '#a0826d',
+    secondaryColor: '#c9b29a'
+  },
+  {
+    id: 'thunder-frog',
+    name: 'Thunder-Frog',
+    nameHebrew: 'צפרדע-רעם',
+    role: 'artillery',
+    hp: 60,
+    speed: 3,
+    attack: 32,
+    range: 5,
+    special: 'shock hop AoE',
+    primaryColor: '#f1c40f',
+    secondaryColor: '#f39c12'
   }
 ];
 
 export class GameData {
   static createHybrid(parent1: AnimalArchetype, parent2: AnimalArchetype): HybridCreature {
     const hp = Math.round((parent1.hp + parent2.hp) / 2);
-    const speed = Math.round((parent1.speed + parent2.speed) / 2);
-    const attack = Math.round((parent1.attack + parent2.attack) / 2);
-    const attackRange = Math.round((parent1.attackRange + parent2.attackRange) / 2);
-    const isRanged = parent1.isRanged || parent2.isRanged;
+    
+    let speed = Math.round((parent1.speed + parent2.speed) / 2);
+    if (Math.abs(parent1.speed - parent2.speed) >= 5) {
+      speed += 1;
+    }
+    
+    const attack = Math.round(((parent1.attack + parent2.attack) / 2) * 1.1);
+    
+    const range = Math.max(parent1.range, parent2.range);
+    
+    const stronger = parent1.attack >= parent2.attack ? parent1 : parent2;
+    const weaker = parent1.attack >= parent2.attack ? parent2 : parent1;
+    const specialPrimary = stronger.special;
+    const specialSecondary = weaker.special;
     
     const name = this.generateHybridName(parent1, parent2);
-    const specialTag = Math.random() > 0.5 ? parent1.specialTag : parent2.specialTag;
     
     return {
       id: `hybrid_${parent1.id}_${parent2.id}_${Date.now()}`,
@@ -94,9 +135,9 @@ export class GameData {
       hp,
       speed,
       attack,
-      attackRange,
-      isRanged,
-      specialTag,
+      range,
+      specialPrimary,
+      specialSecondary,
       primaryColor: parent1.primaryColor,
       secondaryColor: parent2.primaryColor
     };

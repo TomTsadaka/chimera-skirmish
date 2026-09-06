@@ -23,7 +23,7 @@ export class AI {
           unit.targetEnemy.y
         );
 
-        if (distance > unit.creature.attackRange * 0.8) {
+        if (distance > unit.creature.range * 30 * 0.8) {
           unit.moveToPosition(unit.targetEnemy.x, unit.targetEnemy.y);
         } else {
           unit.attackTarget(unit.targetEnemy);

@@ -85,7 +85,7 @@ export class Unit extends Phaser.GameObjects.Container {
 
   moveToPosition(targetX: number, targetY: number): void {
     const distance = Phaser.Math.Distance.Between(this.x, this.y, targetX, targetY);
-    const duration = (distance / this.creature.speed) * 1000;
+    const duration = (distance / (this.creature.speed * 10)) * 1000;
     
     this.scene.tweens.add({
       targets: this,
@@ -100,11 +100,13 @@ export class Unit extends Phaser.GameObjects.Container {
     if (this.attackCooldown > 0) return;
 
     const distance = Phaser.Math.Distance.Between(this.x, this.y, target.x, target.y);
-    if (distance <= this.creature.attackRange) {
+    const effectiveRange = this.creature.range * 30;
+    
+    if (distance <= effectiveRange) {
       const killed = target.takeDamage(this.creature.attack);
       this.attackCooldown = this.ATTACK_COOLDOWN_MS;
       
-      if (this.creature.isRanged) {
+      if (this.creature.range > 2) {
         this.showProjectile(target);
       }
       

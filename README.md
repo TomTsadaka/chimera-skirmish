@@ -13,18 +13,28 @@ A playable browser-based real-time strategy game where you fuse animal archetype
 4. **Victory**: Eliminate all enemy units to win, or lose if your army is destroyed
 
 ### Original Animal Archetypes
-- **Shadowpaw** - Agile melee fighter
-- **Skystalker** - Aerial ranged attacker
-- **Ironjaw** - Armored tank
-- **Sparkshell** - Electric melee unit
-- **Hornguard** - Defensive bruiser
-- **Voltfin** - Aquatic ranged unit
+
+| Name | Role | HP | Speed | Attack | Range | Special |
+|------|------|----|----|--------|-------|---------|
+| **Bat-Echo** (עטלף-הד) | scout | 50 | 9 | 10 | 1 | fog reveal small AoE |
+| **Basalt-Rhino** (קרנף-בזלת) | tank | 180 | 3 | 18 | 1 | shield shove |
+| **Quill-Snake** (נחש-זיפים) | assassin | 55 | 8 | 28 | 1 | poison DoT |
+| **Vinegar-Eagle** (עיט-חומץ) | mobile ranged | 70 | 8 | 16 | 4 | dive (+dmg, CD) |
+| **Crystal-Crab** (סרטן-גביש) | defense | 160 | 2 | 12 | 1 | armor + light reflect |
+| **Ink-Octopus** (תמנון-דיו) | control | 90 | 4 | 11 | 3 | ink cloud slow |
+| **Horn-Deer** (צבי-קרן) | skirmish | 85 | 7 | 20 | 2 | ram shove |
+| **Thunder-Frog** (צפרדע-רעם) | artillery | 60 | 3 | 32 | 5 | shock hop AoE |
+
+*Hebrew names displayed in UI for authenticity*
 
 ### Hybrid Mechanics
-When you fuse two animals:
-- **Stats are averaged**: HP, speed, attack, and range combine
-- **Ranged inheritance**: Hybrid gains ranged attacks if either parent has them
-- **Special tags**: Inherits one parent's special trait (agile, aerial, armored, etc.)
+
+When you fuse two animals, the game uses this formula:
+- **HP** = round((HP_A + HP_B) / 2)
+- **Speed** = round((Speed_A + Speed_B) / 2) + 1 bonus if speed difference ≥ 5
+- **Attack** = round(((Attack_A + Attack_B) / 2) × 1.1)
+- **Range** = max(Range_A, Range_B)
+- **Specials**: Primary from stronger parent + secondary tag from weaker parent
 - **Visual blending**: Procedurally generated appearance using parent colors
 
 ## How to Play

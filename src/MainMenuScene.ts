@@ -40,14 +40,14 @@ export class MainMenuScene extends Phaser.Scene {
       color: '#ffcc00'
     }).setOrigin(0.5);
 
-    const gridStartX = 100;
-    const gridStartY = 150;
-    const spacing = 120;
+    const gridStartX = 80;
+    const gridStartY = 140;
+    const spacing = 110;
 
     ANIMAL_ARCHETYPES.forEach((animal, index) => {
-      const col = index % 3;
-      const row = Math.floor(index / 3);
-      const x = gridStartX + col * spacing;
+      const col = index % 4;
+      const row = Math.floor(index / 4);
+      const x = gridStartX + col * spacing + (col >= 2 ? 120 : 0);
       const y = gridStartY + row * spacing;
 
       this.createAnimalCard(animal, x, y);
@@ -76,16 +76,17 @@ export class MainMenuScene extends Phaser.Scene {
     const isSelected = this.selectedAnimal1?.id === animal.id || this.selectedAnimal2?.id === animal.id;
     const color = isSelected ? 0xffff00 : 0x333333;
     
-    const card = this.add.rectangle(x, y, 100, 100, color)
+    const card = this.add.rectangle(x, y, 95, 95, color)
       .setInteractive({ useHandCursor: true });
 
     const graphics = this.add.graphics();
     graphics.fillStyle(parseInt(animal.primaryColor.replace('#', '0x')), 1);
-    graphics.fillCircle(x, y - 10, 20);
+    graphics.fillCircle(x, y - 10, 18);
     graphics.fillStyle(parseInt(animal.secondaryColor.replace('#', '0x')), 1);
-    graphics.fillCircle(x - 10, y + 10, 15);
+    graphics.fillCircle(x - 10, y + 10, 13);
 
-    this.add.text(x, y + 40, animal.name, { fontSize: '12px', color: '#ffffff' }).setOrigin(0.5);
+    this.add.text(x, y + 35, animal.name, { fontSize: '11px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
+    this.add.text(x, y + 47, animal.role, { fontSize: '9px', color: '#aaaaaa' }).setOrigin(0.5);
 
     card.on('pointerdown', () => {
       if (!this.selectedAnimal1) {
@@ -129,7 +130,7 @@ export class MainMenuScene extends Phaser.Scene {
     this.add.text(100, 130, 'Your Hybrids:', { fontSize: '20px', color: '#ffffff' });
 
     this.createdHybrids.forEach((hybrid, index) => {
-      const y = 170 + index * 80;
+      const y = 170 + index * 90;
       this.createHybridInfo(hybrid, 100, y);
       
       this.add.text(400, y + 10, 'Add to army:', { fontSize: '16px', color: '#ffffff' });
@@ -190,13 +191,17 @@ export class MainMenuScene extends Phaser.Scene {
     graphics.fillCircle(x + 10, y + 20, 10);
 
     this.add.text(x + 50, y, hybrid.name, { fontSize: '18px', color: '#ffffff', fontStyle: 'bold' });
-    this.add.text(x + 50, y + 20, `HP:${hybrid.hp} ATK:${hybrid.attack} SPD:${hybrid.speed} RNG:${hybrid.attackRange}`, {
+    this.add.text(x + 50, y + 20, `HP:${hybrid.hp} ATK:${hybrid.attack} SPD:${hybrid.speed} RNG:${hybrid.range}`, {
       fontSize: '12px',
       color: '#aaaaaa'
     });
-    this.add.text(x + 50, y + 35, `Type: ${hybrid.specialTag}`, {
-      fontSize: '11px',
+    this.add.text(x + 50, y + 35, `1st: ${hybrid.specialPrimary}`, {
+      fontSize: '10px',
       color: '#ffaa00'
+    });
+    this.add.text(x + 50, y + 47, `2nd: ${hybrid.specialSecondary}`, {
+      fontSize: '9px',
+      color: '#ff7700'
     });
   }
 

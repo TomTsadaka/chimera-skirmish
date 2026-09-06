@@ -185,7 +185,7 @@ export class BattleScene extends Phaser.Scene {
     for (const unit of [...this.playerUnits, ...this.enemyUnits]) {
       unit.update(delta);
 
-      if (unit.team === 'player' && unit.targetEnemy) {
+      if (unit.targetEnemy) {
         const distance = Phaser.Math.Distance.Between(
           unit.x,
           unit.y,
@@ -193,7 +193,8 @@ export class BattleScene extends Phaser.Scene {
           unit.targetEnemy.y
         );
 
-        if (distance <= unit.creature.attackRange) {
+        const effectiveRange = unit.creature.range * 30;
+        if (distance <= effectiveRange) {
           unit.attackTarget(unit.targetEnemy);
         }
       }
