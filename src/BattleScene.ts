@@ -191,6 +191,7 @@ export class BattleScene extends Phaser.Scene {
       const keyCode = i === 0 ? 'ZERO' : String(i);
       this.input.keyboard!.on(`keydown-${keyCode}`, (event: KeyboardEvent) => {
         if (event.ctrlKey && !this.gameEnded) {
+          event.preventDefault();
           this.assignControlGroup(i);
         } else if (!this.gameEnded) {
           this.recallControlGroup(i);
