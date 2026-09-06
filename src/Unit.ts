@@ -67,7 +67,15 @@ export class Unit extends Phaser.GameObjects.Container {
     this.hpBar.fillStyle(0x000000, 0.5);
     this.hpBar.fillRect(-barWidth / 2, -30, barWidth, barHeight);
     
-    const color = hpPercent > 0.5 ? 0x00ff00 : hpPercent > 0.25 ? 0xffff00 : 0xff0000;
+    let color: number;
+    if (hpPercent > 0.5) {
+      color = 0x00ff00;
+    } else if (hpPercent > 0.25) {
+      color = 0xffff00;
+    } else {
+      color = 0xff0000;
+    }
+    
     this.hpBar.fillStyle(color, 1);
     this.hpBar.fillRect(-barWidth / 2, -30, barWidth * hpPercent, barHeight);
   }

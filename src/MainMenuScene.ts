@@ -1,47 +1,45 @@
 import Phaser from 'phaser';
-import { AnimalArchetype, HybridCreature, ArmySlot } from './types';
+import { AnimalArchetype, HybridCreature } from './types';
 import { ANIMAL_ARCHETYPES, GameData } from './GameData';
+import { strings } from './i18n';
 
 export class MainMenuScene extends Phaser.Scene {
   private selectedAnimal1: AnimalArchetype | null = null;
   private selectedAnimal2: AnimalArchetype | null = null;
-  private createdHybrids: HybridCreature[] = [];
-  private armySlots: ArmySlot[] = [
-    { hybrid: null, count: 0 },
-    { hybrid: null, count: 0 },
-    { hybrid: null, count: 0 }
-  ];
+  private currentHybrid: HybridCreature | null = null;
+  private onboardingShown: boolean = false;
 
   constructor() {
     super({ key: 'MainMenuScene' });
   }
 
   create(): void {
-    this.add.text(400, 30, 'CHIMERA SKIRMISH', {
+    this.add.text(400, 30, strings.forge.title, {
       fontSize: '48px',
       color: '#ffffff',
-      fontStyle: 'bold'
+      fontStyle: 'bold',
+      fontFamily: 'Arial'
     }).setOrigin(0.5);
 
     this.showForgeUI();
+    
+    if (!this.onboardingShown) {
+      this.showOnboardingTip(strings.onboard.forge, 400, 520);
+    }
   }
 
   private showForgeUI(): void {
     this.children.removeAll();
 
-    this.add.text(400, 30, 'CHIMERA SKIRMISH', {
+    this.add.text(400, 30, strings.forge.title, {
       fontSize: '48px',
       color: '#ffffff',
-      fontStyle: 'bold'
-    }).setOrigin(0.5);
-
-    this.add.text(400, 90, 'CREATURE FORGE - Select two animals to combine', {
-      fontSize: '24px',
-      color: '#ffcc00'
+      fontStyle: 'bold',
+      fontFamily: 'Arial'
     }).setOrigin(0.5);
 
     const gridStartX = 80;
-    const gridStartY = 140;
+    const gridStartY = 120;
     const spacing = 110;
 
     ANIMAL_ARCHETYPES.forEach((animal, index) => {
@@ -53,22 +51,87 @@ export class MainMenuScene extends Phaser.Scene {
       this.createAnimalCard(animal, x, y);
     });
 
-    this.add.text(400, 430, 'Selected:', { fontSize: '20px', color: '#ffffff' }).setOrigin(0.5);
+    this.add.text(400, 390, strings.forge.slotEmpty + ' 1:', { 
+      fontSize: '18px', 
+      color: '#ffffff',
+      fontFamily: 'Arial'
+    }).setOrigin(0.5);
     
-    const selected1Text = this.selectedAnimal1 ? this.selectedAnimal1.name : '---';
-    const selected2Text = this.selectedAnimal2 ? this.selectedAnimal2.name : '---';
+    const selected1Text = this.selectedAnimal1 ? this.selectedAnimal1.nameHebrew : '---';
+    this.add.text(400, 415, selected1Text, { 
+      fontSize: '20px', 
+      color: '#2DD4BF',
+      fontFamily: 'Arial'
+    }).setOrigin(0.5);
+
+    this.add.text(400, 445, strings.forge.slotEmpty + ' 2:', { 
+      fontSize: '18px', 
+      color: '#ffffff',
+      fontFamily: 'Arial'
+    }).setOrigin(0.5);
     
-    this.add.text(300, 470, `1: ${selected1Text}`, { fontSize: '18px', color: '#00ff00' }).setOrigin(0.5);
-    this.add.text(500, 470, `2: ${selected2Text}`, { fontSize: '18px', color: '#00ff00' }).setOrigin(0.5);
+    const selected2Text = this.selectedAnimal2 ? this.selectedAnimal2.nameHebrew : '---';
+    this.add.text(400, 470, selected2Text, { 
+      fontSize: '20px', 
+      color: '#2DD4BF',
+      fontFamily: 'Arial'
+    }).setOrigin(0.5);
 
     if (this.selectedAnimal1 && this.selectedAnimal2) {
-      const fuseBtn = this.add.rectangle(400, 530, 150, 40, 0x00aa00)
+      const mergeBtn = this.add.rectangle(400, 520, 120, 40, 0x00aa00)
         .setInteractive({ useHandCursor: true });
-      this.add.text(400, 530, 'FUSE!', { fontSize: '24px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
+      this.add.text(400, 520, strings.forge.merge, { 
+        fontSize: '22px', 
+        color: '#ffffff',
+        fontFamily: 'Arial'
+      }).setOrigin(0.5);
       
-      fuseBtn.on('pointerdown', () => {
+      mergeBtn.on('pointerdown', () => {
         this.fuseAnimals();
       });
+
+      const resetBtn = this.add.rectangle(280, 520, 100, 40, 0x666666)
+        .setInteractive({ useHandCursor: true });
+      this.add.text(280, 520, strings.forge.reset, { 
+        fontSize: '16px', 
+        color: '#ffffff',
+        fontFamily: 'Arial'
+      }).setOrigin(0.5);
+      
+      resetBtn.on('pointerdown', () => {
+        this.selectedAnimal1 = null;
+        this.selectedAnimal2 = null;
+        this.currentHybrid = null;
+        this.showForgeUI();
+      });
+    } else if (this.selectedAnimal1 || this.selectedAnimal2) {
+      this.add.text(400, 520, strings.forge.mergeDisabledHint, {
+        fontSize: '14px',
+        color: '#888888',
+        fontFamily: 'Arial'
+      }).setOrigin(0.5);
+    }
+
+    if (this.currentHybrid) {
+      this.showHybridPreview(this.currentHybrid, 400, 320);
+      
+      const deployBtn = this.add.rectangle(520, 520, 140, 40, 0x2DD4BF)
+        .setInteractive({ useHandCursor: true });
+      this.add.text(520, 520, strings.forge.toDeploy, { 
+        fontSize: '20px', 
+        color: '#000000',
+        fontStyle: 'bold',
+        fontFamily: 'Arial'
+      }).setOrigin(0.5);
+      
+      deployBtn.on('pointerdown', () => {
+        this.scene.start('DeployScene', { hybrid: this.currentHybrid });
+      });
+
+      if (!this.onboardingShown) {
+        this.showOnboardingTip(strings.onboard.afterMerge, 400, 560);
+        this.onboardingShown = true;
+      }
     }
   }
 
@@ -85,8 +148,11 @@ export class MainMenuScene extends Phaser.Scene {
     graphics.fillStyle(parseInt(animal.secondaryColor.replace('#', '0x')), 1);
     graphics.fillCircle(x - 10, y + 10, 13);
 
-    this.add.text(x, y + 35, animal.name, { fontSize: '11px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
-    this.add.text(x, y + 47, animal.role, { fontSize: '9px', color: '#aaaaaa' }).setOrigin(0.5);
+    this.add.text(x, y + 35, animal.nameHebrew, { 
+      fontSize: '11px', 
+      color: '#ffffff',
+      fontFamily: 'Arial'
+    }).setOrigin(0.5);
 
     card.on('pointerdown', () => {
       if (!this.selectedAnimal1) {
@@ -105,107 +171,59 @@ export class MainMenuScene extends Phaser.Scene {
     if (!this.selectedAnimal1 || !this.selectedAnimal2) return;
 
     const hybrid = GameData.createHybrid(this.selectedAnimal1, this.selectedAnimal2);
-    this.createdHybrids.push(hybrid);
+    this.currentHybrid = hybrid;
 
     this.selectedAnimal1 = null;
     this.selectedAnimal2 = null;
 
-    this.showArmyUI();
+    this.showForgeUI();
   }
 
-  private showArmyUI(): void {
-    this.children.removeAll();
-
-    this.add.text(400, 30, 'CHIMERA SKIRMISH', {
-      fontSize: '48px',
-      color: '#ffffff',
-      fontStyle: 'bold'
-    }).setOrigin(0.5);
-
-    this.add.text(400, 90, 'BUILD YOUR ARMY', {
-      fontSize: '24px',
-      color: '#ffcc00'
-    }).setOrigin(0.5);
-
-    this.add.text(100, 130, 'Your Hybrids:', { fontSize: '20px', color: '#ffffff' });
-
-    this.createdHybrids.forEach((hybrid, index) => {
-      const y = 170 + index * 90;
-      this.createHybridInfo(hybrid, 100, y);
-      
-      this.add.text(400, y + 10, 'Add to army:', { fontSize: '16px', color: '#ffffff' });
-
-      for (let slot = 0; slot < 3; slot++) {
-        const slotX = 520 + slot * 60;
-        const slotBtn = this.add.rectangle(slotX, y + 10, 50, 30, 0x0066cc)
-          .setInteractive({ useHandCursor: true });
-        this.add.text(slotX, y + 10, `Slot ${slot + 1}`, { fontSize: '12px', color: '#ffffff' }).setOrigin(0.5);
-        
-        slotBtn.on('pointerdown', () => {
-          this.armySlots[slot].hybrid = hybrid;
-          this.armySlots[slot].count = Math.min(4, this.armySlots[slot].count + 1);
-          this.showArmyUI();
-        });
-      }
-    });
-
-    const totalUnits = this.armySlots.reduce((sum, slot) => sum + slot.count, 0);
-    this.add.text(100, 420, `Army Composition (${totalUnits}/12 units):`, { fontSize: '20px', color: '#ffffff' });
-
-    this.armySlots.forEach((slot, index) => {
-      if (slot.hybrid) {
-        const y = 460 + index * 40;
-        this.add.text(120, y, `Slot ${index + 1}: ${slot.hybrid.name} x${slot.count}`, {
-          fontSize: '16px',
-          color: '#00ff00'
-        });
-      }
-    });
-
-    const hasUnits = this.armySlots.some(slot => slot.count > 0);
-
-    if (hasUnits) {
-      const battleBtn = this.add.rectangle(400, 540, 200, 50, 0x00aa00)
-        .setInteractive({ useHandCursor: true });
-      this.add.text(400, 540, 'START BATTLE!', { fontSize: '24px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
-      
-      battleBtn.on('pointerdown', () => {
-        this.startBattle();
-      });
-    }
-
-    const backBtn = this.add.rectangle(100, 540, 150, 40, 0x666666)
-      .setInteractive({ useHandCursor: true });
-    this.add.text(100, 540, 'Create More', { fontSize: '18px', color: '#ffffff' }).setOrigin(0.5);
-    
-    backBtn.on('pointerdown', () => {
-      this.showForgeUI();
-    });
-  }
-
-  private createHybridInfo(hybrid: HybridCreature, x: number, y: number): void {
+  private showHybridPreview(hybrid: HybridCreature, x: number, y: number): void {
     const graphics = this.add.graphics();
     graphics.fillStyle(parseInt(hybrid.primaryColor.replace('#', '0x')), 1);
-    graphics.fillCircle(x + 20, y + 10, 15);
+    graphics.fillCircle(x, y, 25);
     graphics.fillStyle(parseInt(hybrid.secondaryColor.replace('#', '0x')), 1);
-    graphics.fillCircle(x + 10, y + 20, 10);
+    graphics.fillCircle(x - 15, y + 15, 18);
 
-    this.add.text(x + 50, y, hybrid.name, { fontSize: '18px', color: '#ffffff', fontStyle: 'bold' });
-    this.add.text(x + 50, y + 20, `HP:${hybrid.hp} ATK:${hybrid.attack} SPD:${hybrid.speed} RNG:${hybrid.range}`, {
-      fontSize: '12px',
-      color: '#aaaaaa'
-    });
-    this.add.text(x + 50, y + 35, `1st: ${hybrid.specialPrimary}`, {
-      fontSize: '10px',
-      color: '#ffaa00'
-    });
-    this.add.text(x + 50, y + 47, `2nd: ${hybrid.specialSecondary}`, {
-      fontSize: '9px',
-      color: '#ff7700'
-    });
+    this.add.text(x, y - 40, hybrid.name, { 
+      fontSize: '20px', 
+      color: '#ffffff', 
+      fontStyle: 'bold',
+      fontFamily: 'Arial'
+    }).setOrigin(0.5);
+    
+    this.add.text(x, y + 45, `${strings.stat.hp}:${hybrid.hp} ${strings.stat.atk}:${hybrid.attack} ${strings.stat.spd}:${hybrid.speed}`, {
+      fontSize: '13px',
+      color: '#aaaaaa',
+      fontFamily: 'Arial'
+    }).setOrigin(0.5);
   }
 
-  private startBattle(): void {
-    this.scene.start('BattleScene', { armySlots: this.armySlots });
+  private showOnboardingTip(text: string, x: number, y: number): void {
+    const tip = this.add.rectangle(x, y, 650, 60, 0x000000, 0.85);
+    const tipText = this.add.text(x, y - 10, text, {
+      fontSize: '14px',
+      color: '#ffcc00',
+      align: 'center',
+      wordWrap: { width: 600 },
+      fontFamily: 'Arial'
+    }).setOrigin(0.5);
+
+    const dismissBtn = this.add.rectangle(x, y + 20, 100, 25, 0x444444)
+      .setInteractive({ useHandCursor: true });
+    const dismissText = this.add.text(x, y + 20, strings.onboard.dismiss, {
+      fontSize: '12px',
+      color: '#ffffff',
+      fontFamily: 'Arial'
+    }).setOrigin(0.5);
+
+    dismissBtn.on('pointerdown', () => {
+      tip.destroy();
+      tipText.destroy();
+      dismissBtn.destroy();
+      dismissText.destroy();
+      this.onboardingShown = true;
+    });
   }
 }

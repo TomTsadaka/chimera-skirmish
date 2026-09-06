@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { strings, colors } from './i18n';
 
 export class GameOverScene extends Phaser.Scene {
   constructor() {
@@ -10,42 +11,56 @@ export class GameOverScene extends Phaser.Scene {
 
     this.add.rectangle(400, 300, 800, 600, 0x000000, 0.8);
 
-    const title = victory ? 'VICTORY!' : 'DEFEAT';
-    const color = victory ? '#00ff00' : '#ff0000';
+    const title = victory ? strings.battle.win : strings.battle.lose;
+    const color = victory ? colors.playerHex : colors.rivalHex;
     
     this.add.text(400, 200, title, {
       fontSize: '64px',
       color: color,
-      fontStyle: 'bold'
+      fontStyle: 'bold',
+      fontFamily: 'Arial'
     }).setOrigin(0.5);
 
-    const message = victory 
-      ? 'Your chimeras have conquered the battlefield!'
-      : 'Your army has been defeated...';
-    
-    this.add.text(400, 280, message, {
-      fontSize: '24px',
-      color: '#ffffff'
-    }).setOrigin(0.5);
-
-    const restartBtn = this.add.rectangle(400, 380, 200, 50, 0x0066cc)
+    const againBtn = this.add.rectangle(400, 340, 200, 50, colors.player)
       .setInteractive({ useHandCursor: true });
     
-    this.add.text(400, 380, 'PLAY AGAIN', {
+    this.add.text(400, 340, strings.battle.again, {
       fontSize: '24px',
-      color: '#ffffff',
-      fontStyle: 'bold'
+      color: '#000000',
+      fontStyle: 'bold',
+      fontFamily: 'Arial'
     }).setOrigin(0.5);
 
-    restartBtn.on('pointerover', () => {
-      restartBtn.setFillStyle(0x0088ff);
+    againBtn.on('pointerover', () => {
+      againBtn.setFillStyle(0x3FE8D4);
     });
 
-    restartBtn.on('pointerout', () => {
-      restartBtn.setFillStyle(0x0066cc);
+    againBtn.on('pointerout', () => {
+      againBtn.setFillStyle(colors.player);
     });
 
-    restartBtn.on('pointerdown', () => {
+    againBtn.on('pointerdown', () => {
+      this.scene.start('DeployScene', this.registry.get('lastHybrid'));
+    });
+
+    const forgeBtn = this.add.rectangle(400, 410, 200, 50, 0x666666)
+      .setInteractive({ useHandCursor: true });
+    
+    this.add.text(400, 410, strings.battle.forge, {
+      fontSize: '20px',
+      color: '#ffffff',
+      fontFamily: 'Arial'
+    }).setOrigin(0.5);
+
+    forgeBtn.on('pointerover', () => {
+      forgeBtn.setFillStyle(0x888888);
+    });
+
+    forgeBtn.on('pointerout', () => {
+      forgeBtn.setFillStyle(0x666666);
+    });
+
+    forgeBtn.on('pointerdown', () => {
       this.scene.start('MainMenuScene');
     });
   }

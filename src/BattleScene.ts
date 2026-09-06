@@ -1,8 +1,9 @@
 import Phaser from 'phaser';
-import { ArmySlot } from './types';
+import { HybridCreature } from './types';
 import { Unit } from './Unit';
 import { AI } from './AI';
 import { ANIMAL_ARCHETYPES, GameData } from './GameData';
+import { strings, colors } from './i18n';
 
 export class BattleScene extends Phaser.Scene {
   private playerUnits: Unit[] = [];
@@ -13,28 +14,47 @@ export class BattleScene extends Phaser.Scene {
   private selectionStart: { x: number; y: number } | null = null;
   private gameEnded: boolean = false;
   private clickMarker: Phaser.GameObjects.Arc | null = null;
+  private playerHPBar!: Phaser.GameObjects.Graphics;
+  private rivalHPBar!: Phaser.GameObjects.Graphics;
+  private onboardingShown: boolean = false;
 
   constructor() {
     super({ key: 'BattleScene' });
   }
 
-  create(data: { armySlots: ArmySlot[] }): void {
+  create(data: { hybrid: HybridCreature }): void {
     this.gameEnded = false;
     
-    this.add.text(400, 20, 'BATTLE ARENA', {
+    this.registry.set('lastHybrid', data.hybrid);
+    
+    this.add.text(400, 20, strings.battle.title, {
       fontSize: '32px',
       color: '#ffffff',
-      fontStyle: 'bold'
+      fontStyle: 'bold',
+      fontFamily: 'Arial'
     }).setOrigin(0.5);
 
-    this.add.text(100, 20, 'Left-click: Select | Right-click: Move/Attack | Shift: Multi-select', {
-      fontSize: '12px',
-      color: '#aaaaaa'
+    this.add.text(100, 60, strings.deploy.you, {
+      fontSize: '18px',
+      color: colors.playerHex,
+      fontStyle: 'bold',
+      fontFamily: 'Arial'
     });
 
-    this.add.rectangle(400, 300, 700, 500, 0x1a3a1a, 0.3);
+    this.playerHPBar = this.add.graphics();
 
-    this.spawnPlayerArmy(data.armySlots);
+    this.add.text(700, 60, strings.deploy.rival, {
+      fontSize: '18px',
+      color: colors.rivalHex,
+      fontStyle: 'bold',
+      fontFamily: 'Arial'
+    }).setOrigin(1, 0);
+
+    this.rivalHPBar = this.add.graphics();
+
+    this.add.rectangle(400, 340, 700, 480, 0x1a3a1a, 0.3);
+
+    this.spawnPlayerArmy(data.hybrid);
     this.spawnEnemyArmy();
 
     this.ai = new AI(this.enemyUnits, this.playerUnits);
@@ -50,27 +70,28 @@ export class BattleScene extends Phaser.Scene {
     });
 
     this.input.mouse!.disableContextMenu();
+
+    if (!this.onboardingShown) {
+      this.time.delayedCall(500, () => {
+        this.showOnboardingTip(strings.onboard.battle, 400, 540);
+      });
+    }
   }
 
-  private spawnPlayerArmy(armySlots: ArmySlot[]): void {
-    let unitIndex = 0;
+  private spawnPlayerArmy(hybrid: HybridCreature): void {
+    const unitCount = 8;
     const startX = 150;
     const startY = 300;
     const spacing = 60;
 
-    for (const slot of armySlots) {
-      if (slot.hybrid && slot.count > 0) {
-        for (let i = 0; i < slot.count; i++) {
-          const col = unitIndex % 4;
-          const row = Math.floor(unitIndex / 4);
-          const x = startX + col * spacing;
-          const y = startY + row * spacing;
-          
-          const unit = new Unit(this, x, y, slot.hybrid, 'player');
-          this.playerUnits.push(unit);
-          unitIndex++;
-        }
-      }
+    for (let i = 0; i < unitCount; i++) {
+      const col = i % 4;
+      const row = Math.floor(i / 4);
+      const x = startX + col * spacing;
+      const y = startY + row * spacing;
+      
+      const unit = new Unit(this, x, y, hybrid, 'player');
+      this.playerUnits.push(unit);
     }
   }
 
@@ -284,6 +305,8 @@ export class BattleScene extends Phaser.Scene {
       }
     }
 
+    this.updateHPBars();
+
     this.ai.update();
 
     if (!this.gameEnded) {
@@ -299,5 +322,61 @@ export class BattleScene extends Phaser.Scene {
         });
       }
     }
+  }
+
+  private updateHPBars(): void {
+    this.playerHPBar.clear();
+    this.rivalHPBar.clear();
+
+    const playerMaxHP = this.playerUnits.reduce((sum, u) => sum + u.creature.hp, 0);
+    const playerCurrentHP = this.playerUnits.reduce((sum, u) => sum + u.currentHp, 0);
+    const playerPercent = playerMaxHP > 0 ? playerCurrentHP / playerMaxHP : 0;
+
+    const rivalMaxHP = this.enemyUnits.reduce((sum, u) => sum + u.creature.hp, 0);
+    const rivalCurrentHP = this.enemyUnits.reduce((sum, u) => sum + u.currentHp, 0);
+    const rivalPercent = rivalMaxHP > 0 ? rivalCurrentHP / rivalMaxHP : 0;
+
+    const barWidth = 200;
+    const barHeight = 20;
+    const playerX = 100;
+    const rivalX = 600;
+    const barY = 80;
+
+    this.playerHPBar.fillStyle(0x000000, 0.5);
+    this.playerHPBar.fillRect(playerX, barY, barWidth, barHeight);
+    this.playerHPBar.fillStyle(colors.player, 1);
+    this.playerHPBar.fillRect(playerX, barY, barWidth * playerPercent, barHeight);
+
+    this.rivalHPBar.fillStyle(0x000000, 0.5);
+    this.rivalHPBar.fillRect(rivalX, barY, barWidth, barHeight);
+    this.rivalHPBar.fillStyle(colors.rival, 1);
+    this.rivalHPBar.fillRect(rivalX, barY, barWidth * rivalPercent, barHeight);
+  }
+
+  private showOnboardingTip(text: string, x: number, y: number): void {
+    const tip = this.add.rectangle(x, y, 650, 60, 0x000000, 0.85);
+    const tipText = this.add.text(x, y - 10, text, {
+      fontSize: '13px',
+      color: '#ffcc00',
+      align: 'center',
+      wordWrap: { width: 600 },
+      fontFamily: 'Arial'
+    }).setOrigin(0.5);
+
+    const dismissBtn = this.add.rectangle(x, y + 20, 100, 25, 0x444444)
+      .setInteractive({ useHandCursor: true });
+    const dismissText = this.add.text(x, y + 20, strings.onboard.dismiss, {
+      fontSize: '12px',
+      color: '#ffffff',
+      fontFamily: 'Arial'
+    }).setOrigin(0.5);
+
+    dismissBtn.on('pointerdown', () => {
+      tip.destroy();
+      tipText.destroy();
+      dismissBtn.destroy();
+      dismissText.destroy();
+      this.onboardingShown = true;
+    });
   }
 }

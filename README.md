@@ -7,10 +7,10 @@ A playable browser-based real-time strategy game where you fuse animal archetype
 ## Game Overview
 
 ### Core Gameplay Loop
-1. **Creature Forge**: Select two animals from an original roster and fuse them to create a hybrid chimera
-2. **Army Building**: Create 2-3 hybrid designs and build a squad (up to 12 units total)
-3. **Battle**: Command your chimeras in real-time combat against an AI opponent
-4. **Victory**: Eliminate all enemy units to win, or lose if your army is destroyed
+1. **Creature Forge (המזקקה)**: Select two animals from an original roster and fuse them to create a hybrid chimera
+2. **Deploy (לזירה)**: Review your hybrid stats and prepare for battle
+3. **Battle (קרב)**: Command your chimeras in real-time combat against an AI opponent
+4. **Victory/Defeat**: Eliminate all enemy units to win, or lose if your army is destroyed
 
 ### Original Animal Archetypes
 
@@ -57,21 +57,30 @@ npm run preview
 
 The game will open automatically at `http://localhost:3000`
 
-### Controls
+### Game Flow
 
-#### Creature Forge Phase
-- **Left-click** animals to select them for fusion
-- Click **FUSE!** when two animals are selected
-- Navigate to army building after creating hybrids
+#### 1. Forge (המזקקה)
+- Browse 8 animal archetypes displayed with Hebrew names
+- Click two animals to select them
+- Click **מזג** (Merge) to create a hybrid
+- View the hybrid preview with combined stats
+- Click **לזירה** (To Arena) when ready
 
-#### Army Building Phase
-- Click slot buttons to add hybrids to your army
-- Maximum 12 units total, up to 4 of each hybrid type
-- Click **START BATTLE!** when ready
-- Use **Create More** to return to the forge
+#### 2. Deploy (לזירה)
+- Review your hybrid's full stats on the left (marked **אתה** / You in turquoise)
+- See the enemy preview on the right (marked **יריב** / Rival in orange)
+- Click **התחל קרב** (Start Battle) to begin
+- Or return to forge with **חזרה למזקקה** (Back to Forge)
 
-#### Battle Phase
-**Selection:**
+#### 3. Battle (קרב)
+- **Your forces** (turquoise) spawn on the left - 8 units of your hybrid
+- **Enemy forces** (orange) spawn on the right - 3-6 random hybrids
+- **HP bars** at the top show overall army health
+  - Green: >50% HP
+  - Yellow: 25-50% HP  
+  - Red: <25% HP
+
+**Controls:**
 - **Left-click unit**: Select single unit (clears previous)
 - **Left-click empty**: Deselect all
 - **Shift + Left-click**: Add/remove unit from selection
@@ -85,6 +94,19 @@ The game will open automatically at `http://localhost:3000`
 - Units retarget to nearest enemy when current target dies
 - Visual feedback: Green selection ring + HP bar on selected units
 - Click marker shows where orders were issued
+
+#### 4. Victory/Defeat
+- **ניצחת!** (You Won!) - All enemies defeated
+- **הפסדת** (You Lost) - All your units defeated
+- Click **קרב נוסף** (Another Battle) to retry with same hybrid
+- Click **חזרה למזקקה** (Back to Forge) to create a new hybrid
+
+### UI Language
+- **Interface**: Hebrew (RTL layout)
+- **Onboarding tips**: Hebrew with dismissible **הבנתי** (Got It) button
+- **Color coding**:
+  - Player: Turquoise (#2DD4BF)
+  - Rival: Orange (#F97316)
 
 ## Technology Stack
 
@@ -111,14 +133,17 @@ The `dist` folder contains the production build after running `npm run build`.
 This is a minimal viable prototype focusing on core mechanics:
 
 ✅ **Included:**
-- Creature DNA mixing with stat blending
-- Army composition and deployment
+- Creature DNA mixing with stat blending (design-locked formula)
+- 8 original animal archetypes with Hebrew names
+- Simplified flow: Forge → Deploy → Battle
 - Real-time unit movement and combat
-- Basic AI opponent
+- Basic AI opponent with aggro/leash behavior
 - Win/lose conditions
 - Procedurally generated unit visuals
+- Hebrew RTL UI with onboarding tips
 
 ❌ **Out of Scope:**
+- Multiple hybrid army compositions
 - Base building or resource gathering
 - Fog of war or advanced tactics
 - Multiplayer or networking
