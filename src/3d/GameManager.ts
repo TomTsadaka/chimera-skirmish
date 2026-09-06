@@ -182,6 +182,9 @@ export class GameManager {
   private handleBattleRematch(): void {
     console.log('[GameManager] Handling battle rematch - full reset');
     
+    // Preserve the current hybrid before destroying
+    const currentHybrid = this.armyRoster.length > 0 ? this.armyRoster[0] : null;
+    
     // Close game-over modal
     this.uiManager.closeGameOver();
     
@@ -207,8 +210,8 @@ export class GameManager {
     this.dnaTrickleTimer = 0;
     this.aiUpdateTimer = 0;
     
-    // Full restart
-    this.start();
+    // Full restart with the same hybrid to preserve player's selection
+    this.start(currentHybrid);
     console.log('[GameManager] Battle rematch complete');
   }
 

@@ -171,7 +171,7 @@ export class CageUI {
   }
   
   private renderSelectionDisplay(): void {
-    const display = document.getElementById('cage-selection-display');
+    const display = this.container?.querySelector('#cage-selection-display') as HTMLDivElement | null;
     if (!display) return;
     
     display.innerHTML = '';
@@ -395,7 +395,7 @@ export class CageUI {
   }
   
   private renderAnimalList(): void {
-    const list = document.getElementById('cage-animal-list');
+    const list = this.container?.querySelector('#cage-animal-list') as HTMLDivElement | null;
     if (!list) return;
     
     list.innerHTML = '';
