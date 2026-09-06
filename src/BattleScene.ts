@@ -471,6 +471,16 @@ export class BattleScene extends Phaser.Scene {
       if (!this.gameEnded) this.stopSelectedUnits();
     });
 
+    // Debug hotkey: K to force win modal (for QA when ?debug=1)
+    this.input.keyboard!.on('keydown-K', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('debug') === '1') {
+        console.log('[DEBUG] Force win triggered via K key');
+        this.gameEnded = true;
+        this.scene.start('GameOverScene', { victory: true, message: strings.win.destroyBase });
+      }
+    });
+
     this.input.keyboard!.on('keydown-DELETE', () => {
       if (!this.gameEnded) this.stopSelectedUnits();
     });
@@ -624,9 +634,11 @@ export class BattleScene extends Phaser.Scene {
   private onResourceGathered(data: { team: 'player' | 'enemy'; amount: number }): void {
     if (data.team === 'player') {
       this.playerResources.biomass += data.amount;
+      console.log(`[BIOMASS] Player gathered ${data.amount}, total: ${this.playerResources.biomass}`);
       this.updateResourceUI();
     } else {
       this.enemyResources.biomass += data.amount;
+      console.log(`[BIOMASS] Enemy gathered ${data.amount}, total: ${this.enemyResources.biomass}`);
     }
   }
   
@@ -1006,18 +1018,25 @@ export class BattleScene extends Phaser.Scene {
         // Auto-attack nearby enemy HQ if in range (fixed range calculation)
         if (distanceToHQ <= unit.creature.range + 50) {
           if (unit.attackCooldown <= 0) {
+            console.log(`[HQ ATTACK] ${unit.team} unit attacking HQ at distance ${distanceToHQ.toFixed(1)}, damage: ${unit.creature.attack}`);
             const destroyed = enemyHQ.takeDamage(unit.creature.attack);
             unit.attackCooldown = 1000;
+            
+            console.log(`[HQ HP] Enemy HQ HP: ${enemyHQ.currentHp}/${enemyHQ.maxHp}, destroyed: ${destroyed}`);
             
             // Trigger win/lose immediately when HQ destroyed
             if (destroyed) {
               this.gameEnded = true;
+              console.log(`[WIN/LOSE] HQ destroyed! Team ${unit.team} wins!`);
+              
               if (unit.team === 'player') {
-                this.time.delayedCall(500, () => {
+                console.log('[WIN] Showing victory screen with message:', strings.win.destroyBase);
+                this.time.delayedCall(100, () => {
                   this.scene.start('GameOverScene', { victory: true, message: strings.win.destroyBase });
                 });
               } else {
-                this.time.delayedCall(500, () => {
+                console.log('[LOSE] Showing defeat screen with message:', strings.lose.baseDown);
+                this.time.delayedCall(100, () => {
                   this.scene.start('GameOverScene', { victory: false, message: strings.lose.baseDown });
                 });
               }
