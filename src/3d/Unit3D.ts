@@ -16,10 +16,12 @@ export class Unit3D {
   
   // Worker properties
   public targetResourceNode: ResourceNode3D | null = null;
+  public targetConstructionBuilding: Building3D | null = null;
   public homeBuilding: Building3D | null = null;
   public carryingBiomass: number = 0;
-  public gatherState: 'idle' | 'moving_to_resource' | 'gathering' | 'returning' | 'moving_to_dropoff' = 'idle';
+  public gatherState: 'idle' | 'moving_to_resource' | 'gathering' | 'returning' | 'moving_to_dropoff' | 'constructing' = 'idle';
   private gatherTimer: number = 0;
+  public unitId: string = Math.random().toString(36).substr(2, 9);
   
   // Movement
   private targetPosition: THREE.Vector3 | null = null;
@@ -272,10 +274,31 @@ export class Unit3D {
   public orderGather(resourceNode: ResourceNode3D): void {
     if (this.role !== 'worker' || !this.homeBuilding) return;
     
+    // Clear construction assignment
+    if (this.targetConstructionBuilding) {
+      this.targetConstructionBuilding.assignedWorkers.delete(this.unitId);
+      this.targetConstructionBuilding = null;
+    }
+    
     this.targetResourceNode = resourceNode;
     this.gatherState = 'moving_to_resource';
     this.targetEnemy = null;
     this.moveToPosition(resourceNode.getPosition().x, resourceNode.getPosition().z);
+  }
+  
+  public orderConstruct(building: Building3D): void {
+    if (this.role !== 'worker') return;
+    if (building.buildingState !== 'constructing') return;
+    
+    // Clear gathering assignment
+    this.targetResourceNode = null;
+    this.gatherState = 'constructing';
+    this.targetEnemy = null;
+    
+    // Assign to building
+    this.targetConstructionBuilding = building;
+    building.assignedWorkers.add(this.unitId);
+    this.moveToPosition(building.getPosition().x, building.getPosition().z);
   }
 
   public attackTarget(target: Unit3D): void {
@@ -367,6 +390,26 @@ export class Unit3D {
   }
 
   private updateGatherBehavior(delta: number): void {
+    // Handle construction mode
+    if (this.gatherState === 'constructing') {
+      if (!this.targetConstructionBuilding || this.targetConstructionBuilding.buildingState !== 'constructing') {
+        // Building finished or destroyed
+        if (this.targetConstructionBuilding) {
+          this.targetConstructionBuilding.assignedWorkers.delete(this.unitId);
+        }
+        this.targetConstructionBuilding = null;
+        this.gatherState = 'idle';
+        return;
+      }
+      
+      // Stay near building (within 5 units)
+      const distanceToBuilding = this.getPosition().distanceTo(this.targetConstructionBuilding.getPosition());
+      if (distanceToBuilding > 5) {
+        this.moveToPosition(this.targetConstructionBuilding.getPosition().x, this.targetConstructionBuilding.getPosition().z);
+      }
+      return;
+    }
+    
     if (!this.targetResourceNode || !this.homeBuilding) {
       this.gatherState = 'idle';
       return;
@@ -454,6 +497,11 @@ export class Unit3D {
   }
 
   public destroy(): void {
+    // Clean up construction assignment
+    if (this.targetConstructionBuilding) {
+      this.targetConstructionBuilding.assignedWorkers.delete(this.unitId);
+    }
+    
     this.scene.remove(this.mesh);
     // Dispose geometries and materials
     this.mesh.traverse((child) => {

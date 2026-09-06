@@ -336,9 +336,14 @@ export class Building3D {
   public advanceConstruction(deltaMs: number): void {
     if (this.buildingState !== 'constructing') return;
     
-    // Calculate build rate: base 1× + 0.3× per worker (max 2×)
+    // Calculate build rate: 0 workers = 0×, 1 worker = 1×, 2+ workers = 2× (capped)
     const workerCount = this.assignedWorkers.size;
-    const buildRate = Math.min(1.0 + (workerCount * 0.3), 2.0);
+    let buildRate = 0;
+    if (workerCount === 1) {
+      buildRate = 1.0;
+    } else if (workerCount >= 2) {
+      buildRate = 2.0;
+    }
     
     const progressDelta = (deltaMs / this.constructionTotalTime) * buildRate;
     this.constructionProgress += progressDelta;
@@ -416,6 +421,37 @@ export class Building3D {
     const progressBar = new THREE.Mesh(progressGeometry, progressMaterial);
     progressBar.position.set(-(barWidth * (1 - this.constructionProgress)) / 2, yOffset, 0.01);
     this.progressBarContainer.add(progressBar);
+    
+    // Text label with percentage and remaining time
+    const workerCount = this.assignedWorkers.size;
+    let buildRate = 0;
+    if (workerCount === 1) buildRate = 1.0;
+    else if (workerCount >= 2) buildRate = 2.0;
+    
+    const remainingProgress = 1.0 - this.constructionProgress;
+    const remainingMs = buildRate > 0 ? (remainingProgress * this.constructionTotalTime) / buildRate : this.constructionTotalTime;
+    const remainingSec = Math.ceil(remainingMs / 1000);
+    
+    const percent = Math.floor(this.constructionProgress * 100);
+    const textContent = `${percent}% · ${remainingSec}s`;
+    
+    // Create canvas for text
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d')!;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 32px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(textContent, 128, 32);
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    const textMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
+    const textSprite = new THREE.Sprite(textMaterial);
+    textSprite.scale.set(4, 1, 1);
+    textSprite.position.y = yOffset + 1;
+    this.progressBarContainer.add(textSprite);
   }
 
   public getPosition(): THREE.Vector3 {

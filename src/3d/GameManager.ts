@@ -37,6 +37,21 @@ export class GameManager {
   // Player buildings (excluding HQ)
   private playerBuildings: Building3D[] = [];
   
+  // Placement mode state
+  private placementMode: {
+    active: boolean;
+    buildingType: 'Camp' | 'ProductionCell' | 'EnergyMast' | null;
+    ghostMesh: THREE.Mesh | null;
+    isValid: boolean;
+    cost: { dna: number; biomass: number };
+  } = {
+    active: false,
+    buildingType: null,
+    ghostMesh: null,
+    isValid: false,
+    cost: { dna: 0, biomass: 0 }
+  };
+  
   private readonly MAP_WIDTH = GAME_CONSTANTS.MAP_WIDTH;
   private readonly MAP_HEIGHT = GAME_CONSTANTS.MAP_HEIGHT;
 
@@ -64,11 +79,19 @@ export class GameManager {
   private setupInputCallbacks(): void {
     this.inputManager.on('leftclick', (worldPos: THREE.Vector3, shift: boolean) => {
       if (this.gameEnded) return;
+      if (this.placementMode.active) {
+        this.confirmPlacement(worldPos);
+        return;
+      }
       this.handleLeftClick(worldPos, shift);
     });
     
     this.inputManager.on('rightclick', (worldPos: THREE.Vector3) => {
       if (this.gameEnded) return;
+      if (this.placementMode.active) {
+        this.cancelPlacement();
+        return;
+      }
       this.handleRightClick(worldPos);
     });
     
@@ -81,6 +104,13 @@ export class GameManager {
     this.minimap.onMinimapClickCallback((x: number, z: number) => {
       if (!this.gameEnded) {
         this.camera.panTo(x, z);
+      }
+    });
+    
+    // Hover callback for placement mode
+    this.inputManager.on('hover', (worldPos: THREE.Vector3 | null) => {
+      if (this.placementMode.active && worldPos) {
+        this.updateGhostPosition(worldPos);
       }
     });
   }
@@ -452,6 +482,16 @@ export class GameManager {
       return;
     }
     
+    // Check for constructing building (workers can build)
+    const clickedBuilding = this.getBuildingAtPosition(worldPos);
+    if (clickedBuilding && clickedBuilding.buildingState === 'constructing') {
+      const workers = this.selectedUnits.filter(u => u.role === 'worker');
+      for (const worker of workers) {
+        worker.orderConstruct(clickedBuilding);
+      }
+      return;
+    }
+    
     // Check for resource node
     const clickedNode = this.getResourceNodeAtPosition(worldPos);
     if (clickedNode && !clickedNode.isEmpty()) {
@@ -515,6 +555,16 @@ export class GameManager {
       const distance = worldPos.distanceTo(node.getPosition());
       if (distance < 4) {
         return node;
+      }
+    }
+    return null;
+  }
+  
+  private getBuildingAtPosition(worldPos: THREE.Vector3): Building3D | null {
+    for (const building of this.playerBuildings) {
+      const distance = worldPos.distanceTo(building.getPosition());
+      if (distance < 8) {
+        return building;
       }
     }
     return null;
@@ -666,35 +716,132 @@ export class GameManager {
       return;
     }
     
-    // Deduct resources
-    this.playerResources.dna -= cost.dna;
-    this.playerResources.biomass -= cost.biomass;
-    this.updateResourceUI();
+    // Enter placement mode (don't deduct resources yet - only on confirm)
+    this.placementMode.active = true;
+    this.placementMode.buildingType = buildingType;
+    this.placementMode.cost = cost;
+    this.placementMode.isValid = false;
     
-    // Place building in a semi-random position near HQ
-    const angle = Math.random() * Math.PI * 2;
-    const distance = 25 + Math.random() * 10; // 25-35 units from HQ
-    const pos = new THREE.Vector3(
-      this.playerHQ.x + Math.cos(angle) * distance,
-      0,
-      this.playerHQ.y + Math.sin(angle) * distance
-    );
+    // Create ghost mesh
+    const ghostGeometry = new THREE.BoxGeometry(8, 6, 8);
+    const ghostMaterial = new THREE.MeshBasicMaterial({
+      color: 0xff0000, // Start red (invalid)
+      transparent: true,
+      opacity: 0.5
+    });
+    this.placementMode.ghostMesh = new THREE.Mesh(ghostGeometry, ghostMaterial);
+    this.placementMode.ghostMesh.position.y = 3;
+    this.scene.add(this.placementMode.ghostMesh);
+    
+    // Show placement banner
+    this.uiManager.showPlacementBanner();
+    
+    console.log(`[GameManager] Entered placement mode for ${buildingType}`);
+  }
+  
+  private updateGhostPosition(worldPos: THREE.Vector3): void {
+    if (!this.placementMode.active || !this.placementMode.ghostMesh) return;
+    
+    // Update ghost position
+    this.placementMode.ghostMesh.position.x = worldPos.x;
+    this.placementMode.ghostMesh.position.z = worldPos.z;
+    
+    // Validate placement
+    this.placementMode.isValid = this.isValidPlacement(worldPos);
+    
+    // Update ghost color based on validity
+    const material = this.placementMode.ghostMesh.material as THREE.MeshBasicMaterial;
+    material.color.setHex(this.placementMode.isValid ? 0x00ff00 : 0xff0000);
+  }
+  
+  private isValidPlacement(worldPos: THREE.Vector3): boolean {
+    // Check map bounds (with margin)
+    const margin = 15;
+    if (worldPos.x < margin || worldPos.x > this.MAP_WIDTH - margin ||
+        worldPos.z < margin || worldPos.z > this.MAP_HEIGHT - margin) {
+      return false;
+    }
+    
+    // Check distance from HQs (must be at least 20 units away)
+    const minHQDistance = 20;
+    if (worldPos.distanceTo(this.playerHQ.getPosition()) < minHQDistance ||
+        worldPos.distanceTo(this.enemyHQ.getPosition()) < minHQDistance) {
+      return false;
+    }
+    
+    // Check distance from other buildings (must be at least 12 units away)
+    const minBuildingDistance = 12;
+    for (const building of this.playerBuildings) {
+      if (worldPos.distanceTo(building.getPosition()) < minBuildingDistance) {
+        return false;
+      }
+    }
+    
+    // Check distance from resource nodes (must be at least 10 units away)
+    const minNodeDistance = 10;
+    for (const node of this.resourceNodes) {
+      if (worldPos.distanceTo(node.getPosition()) < minNodeDistance) {
+        return false;
+      }
+    }
+    
+    return true;
+  }
+  
+  private confirmPlacement(worldPos: THREE.Vector3): void {
+    if (!this.placementMode.active || !this.placementMode.isValid) {
+      console.log('[GameManager] Cannot place building - invalid position');
+      return;
+    }
+    
+    // Deduct resources
+    this.playerResources.dna -= this.placementMode.cost.dna;
+    this.playerResources.biomass -= this.placementMode.cost.biomass;
+    this.updateResourceUI();
     
     // Create building in constructing state
     const building = new Building3D(
       this.scene,
-      pos,
+      worldPos,
       'player',
-      buildingType,
+      this.placementMode.buildingType!,
       'constructing'
     );
     
     // Add to player buildings array
     this.playerBuildings.push(building);
-    console.log(`[GameManager] Placed ${buildingType} at construction site, total buildings: ${this.playerBuildings.length}`);
+    console.log(`[GameManager] Placed ${this.placementMode.buildingType} at (${worldPos.x.toFixed(1)}, ${worldPos.z.toFixed(1)})`);
     
-    // Hide build panel after placing
-    this.uiManager.hideBuildPanel();
+    // Exit placement mode
+    this.exitPlacementMode();
+  }
+  
+  private cancelPlacement(): void {
+    console.log('[GameManager] Placement cancelled');
+    this.exitPlacementMode();
+  }
+  
+  private exitPlacementMode(): void {
+    if (!this.placementMode.active) return;
+    
+    // Remove ghost mesh
+    if (this.placementMode.ghostMesh) {
+      this.scene.remove(this.placementMode.ghostMesh);
+      this.placementMode.ghostMesh.geometry.dispose();
+      (this.placementMode.ghostMesh.material as THREE.Material).dispose();
+      this.placementMode.ghostMesh = null;
+    }
+    
+    // Hide placement banner
+    this.uiManager.hidePlacementBanner();
+    
+    // Reset placement state
+    this.placementMode.active = false;
+    this.placementMode.buildingType = null;
+    this.placementMode.isValid = false;
+    this.placementMode.cost = { dna: 0, biomass: 0 };
+    
+    console.log('[GameManager] Exited placement mode');
   }
 
   public update(delta: number): void {

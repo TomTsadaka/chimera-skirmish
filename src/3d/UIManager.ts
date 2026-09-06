@@ -10,6 +10,7 @@ export class UIManager {
   private helpOverlay: HTMLDivElement | null = null;
   private trainPanel: HTMLDivElement | null = null;
   private buildPanel: HTMLDivElement | null = null;
+  private placementBanner: HTMLDivElement | null = null;
   private trainPanelVisible: boolean = false;
   private buildPanelVisible: boolean = false;
   
@@ -981,5 +982,39 @@ export class UIManager {
     this.helpOverlay.appendChild(closeBtn);
     
     document.body.appendChild(this.helpOverlay);
+  }
+  
+  public showPlacementBanner(): void {
+    if (this.placementBanner) return;
+    
+    this.placementBanner = document.createElement('div');
+    this.placementBanner.id = 'placement-banner';
+    this.placementBanner.textContent = strings.build.place;
+    this.placementBanner.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.9);
+      border: 3px solid ${colors.playerHex};
+      border-radius: 10px;
+      padding: 20px 40px;
+      font-size: 24px;
+      font-weight: bold;
+      color: ${colors.playerHex};
+      text-shadow: 0 0 10px ${colors.playerHex};
+      box-shadow: 0 0 20px ${colors.playerHex}40;
+      z-index: 2500;
+      pointer-events: none;
+    `;
+    
+    document.body.appendChild(this.placementBanner);
+  }
+  
+  public hidePlacementBanner(): void {
+    if (this.placementBanner) {
+      document.body.removeChild(this.placementBanner);
+      this.placementBanner = null;
+    }
   }
 }
