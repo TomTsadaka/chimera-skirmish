@@ -14,16 +14,16 @@ A playable browser-based real-time strategy game where you fuse animal archetype
 
 ### Original Animal Archetypes
 
-| Name | Role | HP | Speed | Attack | Range | Special |
-|------|------|----|----|--------|-------|---------|
-| **Bat-Echo** (עטלף-הד) | scout | 50 | 9 | 10 | 1 | fog reveal small AoE |
-| **Basalt-Rhino** (קרנף-בזלת) | tank | 180 | 3 | 18 | 1 | shield shove |
-| **Quill-Snake** (נחש-זיפים) | assassin | 55 | 8 | 28 | 1 | poison DoT |
-| **Vinegar-Eagle** (עיט-חומץ) | mobile ranged | 70 | 8 | 16 | 4 | dive (+dmg, CD) |
-| **Crystal-Crab** (סרטן-גביש) | defense | 160 | 2 | 12 | 1 | armor + light reflect |
-| **Ink-Octopus** (תמנון-דיו) | control | 90 | 4 | 11 | 3 | ink cloud slow |
-| **Horn-Deer** (צבי-קרן) | skirmish | 85 | 7 | 20 | 2 | ram shove |
-| **Thunder-Frog** (צפרדע-רעם) | artillery | 60 | 3 | 32 | 5 | shock hop AoE |
+| Name | Role | HP | Speed | Attack | Range | Vision | Special |
+|------|------|----|----|--------|-------|--------|---------|
+| **Bat-Echo** (עטלף-הד) | scout | 50 | 9 | 10 | 1 | 7 | fog reveal small AoE |
+| **Basalt-Rhino** (קרנף-בזלת) | tank | 180 | 3 | 18 | 1 | 3 | shield shove |
+| **Quill-Snake** (נחש-זיפים) | assassin | 55 | 8 | 28 | 1 | 4 | poison DoT |
+| **Vinegar-Eagle** (עיט-חומץ) | mobile ranged | 70 | 8 | 16 | 4 | 6 | dive (+dmg, CD) |
+| **Crystal-Crab** (סרטן-גביש) | defense | 160 | 2 | 12 | 1 | 3 | armor + light reflect |
+| **Ink-Octopus** (תמנון-דיו) | control | 90 | 4 | 11 | 3 | 4 | ink cloud slow |
+| **Horn-Deer** (צבי-קרן) | skirmish | 85 | 7 | 20 | 2 | 5 | ram shove |
+| **Thunder-Frog** (צפרדע-רעם) | artillery | 60 | 3 | 32 | 5 | 6 | shock hop AoE |
 
 *Hebrew names displayed in UI for authenticity*
 
@@ -34,6 +34,7 @@ When you fuse two animals, the game uses this formula:
 - **Speed** = round((Speed_A + Speed_B) / 2) + 1 bonus if speed difference ≥ 5
 - **Attack** = round(((Attack_A + Attack_B) / 2) × 1.1)
 - **Range** = max(Range_A, Range_B)
+- **Vision** = max(Vision_A, Vision_B)
 - **Specials**: Primary from stronger parent + secondary tag from weaker parent
 - **Visual blending**: Procedurally generated appearance using parent colors
 
@@ -119,6 +120,27 @@ The game will open automatically at `http://localhost:3000`
 - **F1 or ?**: Show Hebrew controls help overlay
 - Visual feedback: Green selection ring + HP bar on selected units
 - Click marker shows where orders were issued
+
+### Fog of War & Vision
+
+The battlefield uses a three-state fog of war system:
+- **Unexplored** (black): Areas you haven't discovered yet
+- **Explored** (darkened): Areas you've seen but can't currently see
+- **Visible** (clear): Areas within your units' vision radius
+
+**Vision Mechanics:**
+- Each unit has a vision radius in tiles (scouts have the best vision)
+- Enemy units are only visible when within your vision range
+- Enemies outside vision are hidden, but can still engage you (ambush potential)
+- Vision radius is independent from AI aggro radius
+- Units with higher vision values reveal more of the map
+
+**Vision Values:**
+- Scout (Bat-Echo): 7 tiles - excellent for exploration
+- Ranged/Artillery: 6 tiles - good map awareness
+- Skirmish: 5 tiles - average vision
+- Assassin/Control: 4 tiles - focused vision
+- Tank/Defense: 3 tiles - limited awareness
 
 #### 4. Victory/Defeat
 - **ניצחת!** (You Won!) - All enemies defeated
