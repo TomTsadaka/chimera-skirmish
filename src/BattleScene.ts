@@ -20,6 +20,7 @@ export class BattleScene extends Phaser.Scene {
   private playerHPBar!: Phaser.GameObjects.Graphics;
   private rivalHPBar!: Phaser.GameObjects.Graphics;
   private onboardingShown: boolean = false;
+  private onboardingTip: Phaser.GameObjects.Container | null = null;
   private selectedUnitText!: Phaser.GameObjects.Text;
   private selectedHPText!: Phaser.GameObjects.Text;
   private selectedHPBar!: Phaser.GameObjects.Graphics;
@@ -75,7 +76,7 @@ export class BattleScene extends Phaser.Scene {
 
     if (!this.onboardingShown) {
       this.time.delayedCall(500, () => {
-        this.showOnboardingTip(strings.onboard.battle, 400, 520);
+        this.showOnboardingTip(strings.onboard.cameraFog, 400, 520);
       });
     }
   }
@@ -485,19 +486,30 @@ export class BattleScene extends Phaser.Scene {
     const cam = this.cameras.main;
     const pointer = this.input.activePointer;
     const panSpeed = this.CAMERA_SPEED; // world units per frame at 60fps
+    
+    let cameraMoved = false;
 
     // WASD/Arrow keys - no acceleration
     if (this.cursors.left.isDown || this.wasdKeys.a.isDown) {
       cam.scrollX -= panSpeed;
+      cameraMoved = true;
     }
     if (this.cursors.right.isDown || this.wasdKeys.d.isDown) {
       cam.scrollX += panSpeed;
+      cameraMoved = true;
     }
     if (this.cursors.up.isDown || this.wasdKeys.w.isDown) {
       cam.scrollY -= panSpeed;
+      cameraMoved = true;
     }
     if (this.cursors.down.isDown || this.wasdKeys.s.isDown) {
       cam.scrollY += panSpeed;
+      cameraMoved = true;
+    }
+    
+    // Dismiss onboarding tip after first camera move
+    if (cameraMoved && !this.onboardingShown && this.onboardingTip) {
+      this.dismissOnboardingTip();
     }
 
     // Edge-pan: 2.5% of screen with min/max constraints
@@ -672,79 +684,80 @@ export class BattleScene extends Phaser.Scene {
   private showHelpOverlay(): void {
     this.helpOverlay = this.add.container(0, 0).setDepth(10000);
     
-    const bg = this.add.rectangle(400, 300, 700, 550, 0x000000, 0.95).setScrollFactor(0);
+    // Dim overlay background
+    const bg = this.add.rectangle(400, 300, 650, 520, 0x000000, 0.92).setScrollFactor(0);
     this.helpOverlay.add(bg);
     
-    const title = this.add.text(400, 80, strings.controls.title, {
-      fontSize: '32px',
-      color: '#ffffff',
+    // Title
+    const title = this.add.text(400, 70, strings.help.title, {
+      fontSize: '28px',
+      color: colors.playerHex,
       fontStyle: 'bold',
       fontFamily: 'Arial'
     }).setOrigin(0.5).setScrollFactor(0);
     this.helpOverlay.add(title);
 
-    let y = 130;
-    const leftX = 150;
-    const spacing = 30;
+    // Two-column layout: Key | Action
+    let y = 120;
+    const leftColX = 180; // Key column
+    const rightColX = 380; // Action column
+    const rowSpacing = 28;
 
-    const addSection = (sectionTitle: string, items: string[]) => {
-      const sectionText = this.add.text(leftX, y, sectionTitle, {
-        fontSize: '20px',
-        color: colors.playerHex,
-        fontStyle: 'bold',
+    const addRow = (key: string, action: string) => {
+      const keyText = this.add.text(leftColX, y, key, {
+        fontSize: '15px',
+        color: '#ffffff',
+        fontFamily: 'Arial',
+        fontStyle: 'bold'
+      }).setOrigin(0, 0.5).setScrollFactor(0);
+      
+      const actionText = this.add.text(rightColX, y, action, {
+        fontSize: '15px',
+        color: '#cccccc',
         fontFamily: 'Arial'
-      }).setScrollFactor(0);
-      this.helpOverlay!.add(sectionText);
-      y += spacing;
-
-      items.forEach(item => {
-        const itemText = this.add.text(leftX + 20, y, item, {
-          fontSize: '14px',
-          color: '#cccccc',
-          fontFamily: 'Arial'
-        }).setScrollFactor(0);
-        this.helpOverlay!.add(itemText);
-        y += 22;
-      });
-      y += 10;
+      }).setOrigin(0, 0.5).setScrollFactor(0);
+      
+      this.helpOverlay!.add(keyText);
+      this.helpOverlay!.add(actionText);
+      y += rowSpacing;
     };
 
-    addSection(strings.controls.camera, [
-      strings.controls.cameraWASD,
-      strings.controls.cameraWheel,
-      strings.controls.cameraEdge,
-      strings.controls.cameraMinimap
-    ]);
+    // Help rows in Hebrew
+    addRow(strings.help.keyWasd, strings.help.actionWasd);
+    addRow(strings.help.keyZoom, strings.help.actionZoom);
+    addRow(strings.help.keyMinimap, strings.help.actionMinimap);
+    y += 10; // Section spacing
+    
+    addRow(strings.help.keySelect, strings.help.actionSelect);
+    addRow(strings.help.keyMove, strings.help.actionMove);
+    addRow(strings.help.keyDeselect, strings.help.actionDeselect);
+    y += 10;
+    
+    addRow('Ctrl+1-0', 'הקצאת קבוצת בקרה');
+    addRow('1-0', 'קריאת קבוצת בקרה');
+    y += 10;
+    
+    addRow('Space', 'מרכז על בחירה');
+    addRow('F1 / ?', strings.help.openHint);
+    
+    // Fog legend line at bottom
+    y += 20;
+    const fogLegend = this.add.text(400, y, strings.fog.helpLine, {
+      fontSize: '13px',
+      color: '#888888',
+      fontFamily: 'Arial',
+      fontStyle: 'italic'
+    }).setOrigin(0.5, 0).setScrollFactor(0);
+    this.helpOverlay.add(fogLegend);
 
-    addSection(strings.controls.selection, [
-      strings.controls.selectionClick,
-      strings.controls.selectionBox,
-      strings.controls.selectionShift,
-      strings.controls.selectionCtrlA,
-      strings.controls.selectionSpace
-    ]);
-
-    addSection(strings.controls.commands, [
-      strings.controls.commandsMove,
-      strings.controls.commandsStop
-    ]);
-
-    addSection(strings.controls.controlGroups, [
-      strings.controls.controlGroupsAssign,
-      strings.controls.controlGroupsRecall
-    ]);
-
-    addSection(strings.controls.other, [
-      strings.controls.otherEsc,
-      strings.controls.otherHelp
-    ]);
-
-    const closeBtn = this.add.rectangle(400, 540, 150, 40, colors.player)
+    // Close button
+    y += 40;
+    const closeBtn = this.add.rectangle(400, y, 140, 38, colors.player)
       .setInteractive({ useHandCursor: true }).setScrollFactor(0);
     this.helpOverlay.add(closeBtn);
     
-    const closeText = this.add.text(400, 540, strings.controls.close, {
-      fontSize: '20px',
+    const closeText = this.add.text(400, y, strings.help.close, {
+      fontSize: '18px',
       color: '#000000',
       fontStyle: 'bold',
       fontFamily: 'Arial'
@@ -764,29 +777,37 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private showOnboardingTip(text: string, x: number, y: number): void {
-    const tip = this.add.rectangle(x, y, 650, 60, 0x000000, 0.85);
+    this.onboardingTip = this.add.container(0, 0);
+    
+    const tip = this.add.rectangle(x, y, 650, 60, 0x000000, 0.85).setScrollFactor(0);
     const tipText = this.add.text(x, y - 10, text, {
       fontSize: '13px',
       color: '#ffcc00',
       align: 'center',
       wordWrap: { width: 600 },
       fontFamily: 'Arial'
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setScrollFactor(0);
 
     const dismissBtn = this.add.rectangle(x, y + 20, 100, 25, 0x444444)
-      .setInteractive({ useHandCursor: true });
+      .setInteractive({ useHandCursor: true }).setScrollFactor(0);
     const dismissText = this.add.text(x, y + 20, strings.onboard.dismiss, {
       fontSize: '12px',
       color: '#ffffff',
       fontFamily: 'Arial'
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setScrollFactor(0);
+
+    this.onboardingTip.add([tip, tipText, dismissBtn, dismissText]);
 
     dismissBtn.on('pointerdown', () => {
-      tip.destroy();
-      tipText.destroy();
-      dismissBtn.destroy();
-      dismissText.destroy();
-      this.onboardingShown = true;
+      this.dismissOnboardingTip();
     });
+  }
+
+  private dismissOnboardingTip(): void {
+    if (this.onboardingTip) {
+      this.onboardingTip.destroy();
+      this.onboardingTip = null;
+      this.onboardingShown = true;
+    }
   }
 }

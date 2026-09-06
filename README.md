@@ -113,8 +113,11 @@ The game will open automatically at `http://localhost:3000`
 - Units retarget to nearest enemy when current target dies
 
 **Control Groups:**
-- **Ctrl + 1-0**: Assign selected units to control group
-- **1-0**: Recall control group
+- **Ctrl + 1-0**: Assign selected units to control group (overwrites existing group)
+- **1-0**: Recall control group (only player units, dead units automatically removed)
+- Groups persist during battle but are cleared on restart
+- Empty group recall is a no-op
+- Edge-panning does not clear your selection
 
 **Other Shortcuts:**
 - **Esc**: Deselect units / Close help overlay

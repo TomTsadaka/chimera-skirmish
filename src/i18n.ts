@@ -31,11 +31,36 @@ export const strings = {
     spd: 'מהירות',
     tag: 'יכולת'
   },
+  minimap: {
+    label: 'מפה',
+    a11y: 'מינימפה. לחץ כדי להזיז את המצלמה'
+  },
+  fog: {
+    helpLine: 'במפה: כהה=לא נחשף, אפור=נחשף, בהיר=מה שרואים עכשיו.'
+  },
+  help: {
+    title: 'קיצורי מקלדת',
+    openHint: 'עזרה',
+    close: 'סגור',
+    keyWasd: 'WASD / חצים',
+    actionWasd: 'הזזת מצלמה',
+    keyZoom: 'גלגלת',
+    actionZoom: 'תקריב / הרחקה',
+    keySelect: 'לחיצה שמאלית',
+    actionSelect: 'בחירת יחידה',
+    keyMove: 'לחיצה ימנית',
+    actionMove: 'תנועה / פקודה',
+    keyDeselect: 'Esc',
+    actionDeselect: 'ביטול בחירה',
+    keyMinimap: 'לחיצה על המפה',
+    actionMinimap: 'קפיצת מצלמה'
+  },
   onboard: {
     forge: 'בחר שני יצורים — המזקקה תיצור מהם היבריד לקרב.',
     afterMerge: 'ההיבריד מוכן. לחץ לזירה כדי לפרוס אותו.',
     deploy: 'אתה משמאל (טורקיז), היריב מימין. לחץ התחל קרב.',
     battle: 'בחר יחידה והזז אותה בעכבר. עקוב אחרי סרגל החיים למעלה.',
+    cameraFog: 'הזז את המצלמה ב־WASD. השטח הכהה במפה עדיין מוסתר בערפל.',
     dismiss: 'הבנתי'
   },
   controls: {
