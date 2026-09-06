@@ -9,7 +9,9 @@ export class UIManager {
   private gameOverEl: HTMLDivElement | null = null;
   private helpOverlay: HTMLDivElement | null = null;
   private trainPanel: HTMLDivElement | null = null;
+  private buildPanel: HTMLDivElement | null = null;
   private trainPanelVisible: boolean = false;
+  private buildPanelVisible: boolean = false;
   
   private trainCallbacks: {
     onTrainWorker: () => void;
@@ -46,6 +48,7 @@ export class UIManager {
     this.createResourcesPanel();
     this.createHPBarsPanel();
     this.createTrainPanel();
+    this.createBuildPanel();
     this.createSelectionPanel();
     
     this.container.style.display = 'none';
@@ -311,6 +314,43 @@ export class UIManager {
     
     return panel;
   }
+  
+  private createBuildPanel(): HTMLDivElement {
+    const panel = document.createElement('div');
+    panel.id = 'build-panel-container';
+    panel.style.cssText = `
+      position: absolute;
+      bottom: 80px;
+      right: 220px;
+      width: 200px;
+      background: rgba(0, 0, 0, 0.85);
+      border-radius: 8px;
+      padding: 15px;
+      pointer-events: auto;
+      display: none;
+    `;
+    
+    const title = document.createElement('div');
+    title.textContent = 'בנייה';
+    title.style.cssText = `
+      font-size: 18px;
+      font-weight: bold;
+      color: #ffffff;
+      text-align: center;
+      margin-bottom: 15px;
+    `;
+    panel.appendChild(title);
+    
+    // Build buttons container
+    const buttonsContainer = document.createElement('div');
+    buttonsContainer.id = 'build-buttons-container';
+    panel.appendChild(buttonsContainer);
+    
+    this.container.appendChild(panel);
+    this.buildPanel = panel;
+    
+    return panel;
+  }
 
   private createSelectionPanel(): HTMLDivElement {
     const panel = document.createElement('div');
@@ -404,6 +444,94 @@ export class UIManager {
     
     this.trainPanel.style.display = 'none';
     this.trainPanelVisible = false;
+  }
+  
+  public showBuildPanel(
+    resources: EconomyState,
+    onBuild: (buildingType: 'Camp' | 'ProductionCell' | 'EnergyMast') => void
+  ): void {
+    if (!this.buildPanel) return;
+    
+    this.buildPanel.style.display = 'block';
+    this.buildPanelVisible = true;
+    this.setupBuildPanel(resources, onBuild);
+  }
+  
+  public hideBuildPanel(): void {
+    if (!this.buildPanel) return;
+    this.buildPanel.style.display = 'none';
+    this.buildPanelVisible = false;
+  }
+  
+  private setupBuildPanel(
+    resources: EconomyState,
+    onBuild: (buildingType: 'Camp' | 'ProductionCell' | 'EnergyMast') => void
+  ): void {
+    const container = this.buildPanel?.querySelector('#build-buttons-container');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    const buildings = [
+      { type: 'Camp' as const, name: strings.build.camp, dna: 50, biomass: 75 },
+      { type: 'ProductionCell' as const, name: strings.build.cell, dna: 80, biomass: 100 },
+      { type: 'EnergyMast' as const, name: strings.build.mast, dna: 60, biomass: 50 }
+    ];
+    
+    for (const building of buildings) {
+      const canAfford = resources.dna >= building.dna && resources.biomass >= building.biomass;
+      
+      const btn = document.createElement('div');
+      btn.style.cssText = `
+        width: 180px;
+        height: 50px;
+        margin-bottom: 10px;
+        background: ${canAfford ? 'rgba(45, 212, 191, 0.8)' : 'rgba(102, 102, 102, 0.8)'};
+        border-radius: 6px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        cursor: ${canAfford ? 'pointer' : 'not-allowed'};
+        transition: all 0.2s;
+      `;
+      
+      if (canAfford) {
+        btn.addEventListener('mouseenter', () => {
+          btn.style.background = 'rgba(45, 212, 191, 1)';
+        });
+        btn.addEventListener('mouseleave', () => {
+          btn.style.background = 'rgba(45, 212, 191, 0.8)';
+        });
+        btn.addEventListener('click', () => {
+          onBuild(building.type);
+        });
+      }
+      
+      const nameEl = document.createElement('div');
+      nameEl.textContent = building.name;
+      nameEl.style.cssText = `
+        font-size: 13px;
+        font-weight: bold;
+        color: ${canAfford ? '#ffffff' : '#888888'};
+      `;
+      btn.appendChild(nameEl);
+      
+      const costEl = document.createElement('div');
+      costEl.textContent = `${building.dna}D ${building.biomass}B`;
+      costEl.style.cssText = `
+        font-size: 11px;
+        color: ${canAfford ? '#ffffff' : '#666666'};
+      `;
+      btn.appendChild(costEl);
+      
+      container.appendChild(btn);
+    }
+  }
+  
+  public refreshBuildPanel(resources: EconomyState, onBuild: (buildingType: 'Camp' | 'ProductionCell' | 'EnergyMast') => void): void {
+    if (!this.buildPanelVisible) return;
+    this.setupBuildPanel(resources, onBuild);
   }
   
   private setupTrainPanel(

@@ -34,6 +34,9 @@ export class GameManager {
   private gameEnded: boolean = false;
   private aiUpdateTimer: number = 0;
   
+  // Player buildings (excluding HQ)
+  private playerBuildings: Building3D[] = [];
+  
   private readonly MAP_WIDTH = GAME_CONSTANTS.MAP_WIDTH;
   private readonly MAP_HEIGHT = GAME_CONSTANTS.MAP_HEIGHT;
 
@@ -206,6 +209,12 @@ export class GameManager {
     }
     this.resourceNodes = [];
     
+    // Clear player buildings
+    for (const building of this.playerBuildings) {
+      building.destroy();
+    }
+    this.playerBuildings = [];
+    
     // Reset timers
     this.dnaTrickleTimer = 0;
     this.aiUpdateTimer = 0;
@@ -360,7 +369,7 @@ export class GameManager {
     // Check if clicking on HQ first
     const clickedHQ = this.getHQAtPosition(worldPos);
     if (clickedHQ === this.playerHQ) {
-      // Select player HQ - show train panel
+      // Select player HQ - show train and build panels
       if (!shift) {
         this.clearSelection();
       }
@@ -368,6 +377,9 @@ export class GameManager {
         onTrainWorker: () => this.trainWorker(),
         onTrainUnit: (hybrid: HybridCreature) => this.trainCombatUnit(hybrid),
         onTrainArchetype: (archetype: AnimalArchetype) => this.trainArchetype(archetype)
+      });
+      this.uiManager.showBuildPanel(this.playerResources, (buildingType) => {
+        this.startBuildingPlacement(buildingType);
       });
       this.updateSelectionUI();
       return;
@@ -390,11 +402,13 @@ export class GameManager {
       if (!this.selectedUnits.includes(clickedUnit)) {
         this.selectedUnits.push(clickedUnit);
       }
-      // Hide train panel when selecting units (not HQ)
+      // Hide train and build panels when selecting units (not HQ)
       this.uiManager.hideTrainPanel();
+      this.uiManager.hideBuildPanel();
     } else if (!shift) {
       this.clearSelection();
       this.uiManager.hideTrainPanel();
+      this.uiManager.hideBuildPanel();
     }
     
     this.updateSelectionUI();
@@ -621,6 +635,53 @@ export class GameManager {
       this.playerUnits.push(unit);
     }
   }
+  
+  private startBuildingPlacement(buildingType: 'Camp' | 'ProductionCell' | 'EnergyMast'): void {
+    // Get building costs
+    const costs = {
+      Camp: { dna: 50, biomass: 75 },
+      ProductionCell: { dna: 80, biomass: 100 },
+      EnergyMast: { dna: 60, biomass: 50 }
+    };
+    
+    const cost = costs[buildingType];
+    
+    // Check if player can afford
+    if (this.playerResources.dna < cost.dna || this.playerResources.biomass < cost.biomass) {
+      console.log('[GameManager] Cannot afford building:', buildingType);
+      return;
+    }
+    
+    // Deduct resources
+    this.playerResources.dna -= cost.dna;
+    this.playerResources.biomass -= cost.biomass;
+    this.updateResourceUI();
+    
+    // Place building in a semi-random position near HQ
+    const angle = Math.random() * Math.PI * 2;
+    const distance = 25 + Math.random() * 10; // 25-35 units from HQ
+    const pos = new THREE.Vector3(
+      this.playerHQ.x + Math.cos(angle) * distance,
+      0,
+      this.playerHQ.y + Math.sin(angle) * distance
+    );
+    
+    // Create building in constructing state
+    const building = new Building3D(
+      this.scene,
+      pos,
+      'player',
+      buildingType,
+      'constructing'
+    );
+    
+    // Add to player buildings array
+    this.playerBuildings.push(building);
+    console.log(`[GameManager] Placed ${buildingType} at construction site, total buildings: ${this.playerBuildings.length}`);
+    
+    // Hide build panel after placing
+    this.uiManager.hideBuildPanel();
+  }
 
   public update(delta: number): void {
     if (this.gameEnded) return;
@@ -658,6 +719,13 @@ export class GameManager {
     // Update buildings
     this.playerHQ.update();
     this.enemyHQ.update();
+    
+    // Update player buildings (construction progress, train queues)
+    for (const building of this.playerBuildings) {
+      building.update();
+      building.advanceConstruction(delta * 1000);
+      building.advanceTrainQueue(delta * 1000);
+    }
     
     // Update resource nodes
     for (const node of this.resourceNodes) {
