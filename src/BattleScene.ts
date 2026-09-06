@@ -47,6 +47,19 @@ export class BattleScene extends Phaser.Scene {
     this.gameEnded = false;
     this.controlGroups.clear(); // Clear control groups on restart
     
+    // Clear old units if restarting
+    this.playerUnits = [];
+    this.enemyUnits = [];
+    this.selectedUnits = [];
+    
+    // Destroy old fog/minimap if they exist
+    if (this.fogOfWar) {
+      this.fogOfWar.destroy();
+    }
+    if (this.minimap) {
+      this.minimap.destroy();
+    }
+    
     this.registry.set('lastHybrid', data.hybrid);
 
     this.add.rectangle(this.MAP_WIDTH / 2, this.MAP_HEIGHT / 2, this.MAP_WIDTH, this.MAP_HEIGHT, 0x1a3a1a);
@@ -71,7 +84,6 @@ export class BattleScene extends Phaser.Scene {
 
     this.setupUI();
     this.setupInput();
-    this.input.keyboard?.on("keydown-G", () => { this.scene.start("GameOverScene", { victory: true }); });
     this.setupKeyboard();
 
     if (!this.onboardingShown) {
@@ -115,21 +127,11 @@ export class BattleScene extends Phaser.Scene {
     this.input.on('pointermove', this.onPointerMove, this);
     this.input.on('pointerup', this.onPointerUp, this);
 
-    this.game.events.on('blur', () => {
-      this.pointerInWindow = false;
-    });
-
-    this.game.events.on('focus', () => {
-      this.pointerInWindow = true;
-    });
-
-    this.input.on('pointerout', () => {
-      this.pointerInWindow = false;
-    });
-
-    this.input.on('pointerover', () => {
-      this.pointerInWindow = true;
-    });
+    // Use game-level events for canvas leave/enter (more reliable than pointer events)
+    this.game.events.on('blur', this.onGameBlur, this);
+    this.game.events.on('focus', this.onGameFocus, this);
+    this.game.events.on('hidden', this.onGameBlur, this);
+    this.game.events.on('visible', this.onGameFocus, this);
 
     this.input.on('wheel', (pointer: Phaser.Input.Pointer, _gameObjects: any, _deltaX: number, deltaY: number) => {
       if (this.gameEnded) return;
@@ -152,6 +154,22 @@ export class BattleScene extends Phaser.Scene {
     });
 
     this.input.mouse!.disableContextMenu();
+  }
+
+  private onGameBlur = (): void => {
+    this.pointerInWindow = false;
+  };
+
+  private onGameFocus = (): void => {
+    this.pointerInWindow = true;
+  };
+
+  shutdown(): void {
+    // Clean up game event listeners
+    this.game.events.off('blur', this.onGameBlur, this);
+    this.game.events.off('focus', this.onGameFocus, this);
+    this.game.events.off('hidden', this.onGameBlur, this);
+    this.game.events.off('visible', this.onGameFocus, this);
   }
 
   private setupKeyboard(): void {
@@ -263,9 +281,9 @@ export class BattleScene extends Phaser.Scene {
     if (this.gameEnded) return;
     
     if (pointer.leftButtonDown()) {
-      this.selectionStart = { x: pointer.x, y: pointer.y };
+      this.selectionStart = { x: pointer.worldX, y: pointer.worldY };
       
-      const clickedUnit = this.getUnitAtPosition(pointer.x, pointer.y);
+      const clickedUnit = this.getUnitAtPosition(pointer.worldX, pointer.worldY);
       if (clickedUnit && clickedUnit.team === 'player') {
         if (!pointer.event.shiftKey) {
           this.clearSelection();
@@ -284,8 +302,8 @@ export class BattleScene extends Phaser.Scene {
         this.clearSelection();
       }
     } else if (pointer.rightButtonDown()) {
-      this.issueOrderToSelected(pointer.x, pointer.y);
-      this.showClickMarker(pointer.x, pointer.y);
+      this.issueOrderToSelected(pointer.worldX, pointer.worldY);
+      this.showClickMarker(pointer.worldX, pointer.worldY);
     }
   }
 
@@ -297,10 +315,10 @@ export class BattleScene extends Phaser.Scene {
           .setFillStyle(0x00ff00, 0.1);
       }
 
-      const x = Math.min(this.selectionStart.x, pointer.x);
-      const y = Math.min(this.selectionStart.y, pointer.y);
-      const width = Math.abs(pointer.x - this.selectionStart.x);
-      const height = Math.abs(pointer.y - this.selectionStart.y);
+      const x = Math.min(this.selectionStart.x, pointer.worldX);
+      const y = Math.min(this.selectionStart.y, pointer.worldY);
+      const width = Math.abs(pointer.worldX - this.selectionStart.x);
+      const height = Math.abs(pointer.worldY - this.selectionStart.y);
 
       this.selectionBox.setPosition(x + width / 2, y + height / 2);
       this.selectionBox.setSize(width, height);
@@ -359,6 +377,9 @@ export class BattleScene extends Phaser.Scene {
     const targetUnit = this.getUnitAtPosition(x, y);
 
     for (const unit of this.selectedUnits) {
+      // Kill existing movement tweens before issuing new orders
+      this.tweens.killTweensOf(unit);
+      
       if (targetUnit && targetUnit.team === 'enemy') {
         unit.targetEnemy = targetUnit;
         unit.moveToPosition(targetUnit.x, targetUnit.y);
@@ -407,7 +428,7 @@ export class BattleScene extends Phaser.Scene {
 
   update(_time: number, delta: number): void {
     if (!this.gameEnded) {
-      this.updateCameraPan();
+      this.updateCameraPan(delta);
     }
 
     this.playerUnits = this.playerUnits.filter(unit => {
@@ -425,6 +446,9 @@ export class BattleScene extends Phaser.Scene {
       }
       return true;
     });
+    
+    // Update AI with current unit arrays after filtering
+    this.ai.updateUnits(this.enemyUnits, this.playerUnits);
     
     this.selectedUnits = this.selectedUnits.filter(unit => unit.currentHp > 0);
 
@@ -482,10 +506,11 @@ export class BattleScene extends Phaser.Scene {
     }
   }
 
-  private updateCameraPan(): void {
+  private updateCameraPan(delta: number): void {
     const cam = this.cameras.main;
     const pointer = this.input.activePointer;
-    const panSpeed = this.CAMERA_SPEED; // world units per frame at 60fps
+    // Convert wu/s to wu/ms, then multiply by delta (ms)
+    const panSpeed = (this.CAMERA_SPEED / 1000) * delta;
     
     let cameraMoved = false;
 
@@ -566,21 +591,21 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private createSelectedUnitPanel(): void {
-    this.add.rectangle(400, 570, 700, 50, 0x000000, 0.85);
+    this.add.rectangle(400, 570, 700, 50, 0x000000, 0.85).setScrollFactor(0);
     
     this.selectedUnitText = this.add.text(120, 560, strings.battle.noneSelected, {
       fontSize: '16px',
       color: '#aaaaaa',
       fontFamily: 'Arial'
-    });
+    }).setScrollFactor(0);
 
     this.selectedHPText = this.add.text(550, 560, '', {
       fontSize: '16px',
       color: '#ffffff',
       fontFamily: 'Arial'
-    });
+    }).setScrollFactor(0);
 
-    this.selectedHPBar = this.add.graphics();
+    this.selectedHPBar = this.add.graphics().setScrollFactor(0);
   }
 
   private updateSelectedPanel(): void {

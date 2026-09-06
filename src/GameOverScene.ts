@@ -40,7 +40,8 @@ export class GameOverScene extends Phaser.Scene {
     });
 
     againBtn.on('pointerdown', () => {
-      this.scene.start('DeployScene', this.registry.get('lastHybrid'));
+      const lastHybrid = this.registry.get('lastHybrid');
+      this.scene.start('DeployScene', { hybrid: lastHybrid });
     });
 
     const forgeBtn = this.add.rectangle(400, 410, 200, 50, 0x666666)

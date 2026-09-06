@@ -18,10 +18,18 @@ export class AI {
     }
   }
 
+  // Update AI with current unit arrays (called after filtering dead units)
+  updateUnits(units: Unit[], playerUnits: Unit[]): void {
+    this.units = units;
+    this.playerUnits = playerUnits;
+  }
+
   update(): void {
     const currentTime = Date.now();
     
     for (const unit of this.units) {
+      if (unit.currentHp <= 0) continue; // Skip dead units
+      
       const spawnPos = this.spawnPositions.get(unit);
       if (!spawnPos) continue;
 
@@ -75,7 +83,9 @@ export class AI {
   }
 
   private findBestTarget(unit: Unit, aggroRadius: number): Unit | null {
+    // Only target alive player units
     const validTargets = this.playerUnits.filter(target => {
+      if (target.currentHp <= 0) return false;
       const distance = Phaser.Math.Distance.Between(unit.x, unit.y, target.x, target.y);
       return distance <= aggroRadius;
     });
