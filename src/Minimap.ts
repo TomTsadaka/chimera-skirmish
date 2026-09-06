@@ -82,18 +82,22 @@ export class Minimap {
 
   private onMinimapClick(pointer: Phaser.Input.Pointer): void {
     const cam = this.scene.cameras.main;
-    const screenX = pointer.x - cam.worldView.x;
-    const screenY = pointer.y - cam.worldView.y;
     
-    const localX = screenX - this.MINIMAP_X;
-    const localY = screenY - this.MINIMAP_Y;
+    // For setScrollFactor(0) objects, pointer.x/y are screen coordinates
+    // Container is at (MINIMAP_X, MINIMAP_Y) in screen space
+    const localX = pointer.x - this.MINIMAP_X;
+    const localY = pointer.y - this.MINIMAP_Y;
 
+    // Bounds check
     if (localX < 0 || localX > this.MINIMAP_SIZE || localY < 0 || localY > this.MINIMAP_SIZE) {
       return;
     }
 
+    // Convert minimap local coords to world coords
     const worldX = localX / this.scaleX;
     const worldY = localY / this.scaleY;
+
+    console.log('[DEBUG] Minimap click:', { screenX: pointer.x, screenY: pointer.y, localX, localY, worldX, worldY });
 
     // Camera jump only (not unit orders)
     cam.pan(worldX, worldY, 300, 'Sine.easeOut');

@@ -94,6 +94,8 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private setupUI(): void {
+    // Battle title with semi-transparent background for better readability
+    this.add.rectangle(400, 20, 200, 40, 0x000000, 0.7).setOrigin(0.5).setScrollFactor(0);
     this.add.text(400, 20, strings.battle.title, {
       fontSize: '32px',
       color: '#ffffff',
@@ -101,6 +103,8 @@ export class BattleScene extends Phaser.Scene {
       fontFamily: 'Arial'
     }).setOrigin(0.5).setScrollFactor(0);
 
+    // Player label with background
+    this.add.rectangle(100, 68, 80, 28, 0x000000, 0.6).setOrigin(0, 0.5).setScrollFactor(0);
     this.add.text(100, 60, strings.deploy.you, {
       fontSize: '18px',
       color: colors.playerHex,
@@ -110,6 +114,8 @@ export class BattleScene extends Phaser.Scene {
 
     this.playerHPBar = this.add.graphics().setScrollFactor(0);
 
+    // Rival label with background
+    this.add.rectangle(700, 68, 80, 28, 0x000000, 0.6).setOrigin(1, 0.5).setScrollFactor(0);
     this.add.text(700, 60, strings.deploy.rival, {
       fontSize: '18px',
       color: colors.rivalHex,
@@ -193,8 +199,10 @@ export class BattleScene extends Phaser.Scene {
       }
     });
 
-    this.input.keyboard!.on('keydown-ESC', () => {
+    this.input.keyboard!.on('keydown-ESC', (event: KeyboardEvent) => {
+      console.log('[DEBUG] ESC pressed, helpOverlay:', !!this.helpOverlay);
       if (this.helpOverlay) {
+        event.preventDefault();
         this.closeHelpOverlay();
       } else if (!this.gameEnded) {
         this.clearSelection();
@@ -280,10 +288,22 @@ export class BattleScene extends Phaser.Scene {
   private onPointerDown(pointer: Phaser.Input.Pointer): void {
     if (this.gameEnded) return;
     
+    console.log('[DEBUG] onPointerDown:', {
+      screenX: pointer.x,
+      screenY: pointer.y,
+      worldX: pointer.worldX,
+      worldY: pointer.worldY,
+      cameraX: this.cameras.main.scrollX,
+      cameraY: this.cameras.main.scrollY,
+      zoom: this.cameras.main.zoom
+    });
+    
     if (pointer.leftButtonDown()) {
       this.selectionStart = { x: pointer.worldX, y: pointer.worldY };
       
       const clickedUnit = this.getUnitAtPosition(pointer.worldX, pointer.worldY);
+      console.log('[DEBUG] clickedUnit:', clickedUnit ? `${clickedUnit.team} at (${clickedUnit.x}, ${clickedUnit.y})` : 'null');
+      
       if (clickedUnit && clickedUnit.team === 'player') {
         if (!pointer.event.shiftKey) {
           this.clearSelection();
@@ -298,10 +318,12 @@ export class BattleScene extends Phaser.Scene {
         if (!this.selectedUnits.includes(clickedUnit)) {
           this.selectedUnits.push(clickedUnit);
         }
+        console.log('[DEBUG] selectedUnits count:', this.selectedUnits.length);
       } else if (!pointer.event.shiftKey) {
         this.clearSelection();
       }
     } else if (pointer.rightButtonDown()) {
+      console.log('[DEBUG] RMB order to:', pointer.worldX, pointer.worldY, 'selectedUnits:', this.selectedUnits.length);
       this.issueOrderToSelected(pointer.worldX, pointer.worldY);
       this.showClickMarker(pointer.worldX, pointer.worldY);
     }
@@ -595,7 +617,7 @@ export class BattleScene extends Phaser.Scene {
     
     this.selectedUnitText = this.add.text(120, 560, strings.battle.noneSelected, {
       fontSize: '16px',
-      color: '#aaaaaa',
+      color: '#cccccc', // Lighter gray for better readability
       fontFamily: 'Arial'
     }).setScrollFactor(0);
 
