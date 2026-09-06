@@ -139,11 +139,12 @@ export class BattleScene extends Phaser.Scene {
     this.input.on('gameout', this.onGameOut, this);
     this.input.on('gameover', this.onGameOver, this);
     
-    // Window-level blur/focus as additional guards
-    this.game.events.on('blur', this.onGameBlur, this);
-    this.game.events.on('focus', this.onGameFocus, this);
-    this.game.events.on('hidden', this.onGameBlur, this);
-    this.game.events.on('visible', this.onGameFocus, this);
+    // Browser window-level blur/focus (reliable window focus detection)
+    window.addEventListener('blur', this.onWindowBlur);
+    window.addEventListener('focus', this.onWindowFocus);
+    
+    // Document visibility change (tab switching)
+    document.addEventListener('visibilitychange', this.onVisibilityChange);
 
     this.input.on('wheel', (pointer: Phaser.Input.Pointer, _gameObjects: any, _deltaX: number, deltaY: number) => {
       if (this.gameEnded) return;
@@ -176,12 +177,20 @@ export class BattleScene extends Phaser.Scene {
     this.pointerInWindow = true;
   };
 
-  private onGameBlur = (): void => {
+  private onWindowBlur = (): void => {
     this.pointerInWindow = false;
   };
 
-  private onGameFocus = (): void => {
-    this.pointerInWindow = true;
+  private onWindowFocus = (): void => {
+    // Don't force true - only resume if pointer is actually in canvas
+    // Let gameover event handle re-entry
+  };
+  
+  private onVisibilityChange = (): void => {
+    if (document.hidden) {
+      this.pointerInWindow = false;
+    }
+    // On visible: don't force true, wait for gameover
   };
 
   shutdown(): void {
@@ -192,10 +201,10 @@ export class BattleScene extends Phaser.Scene {
     this.input.off('gameout', this.onGameOut, this);
     this.input.off('gameover', this.onGameOver, this);
     
-    this.game.events.off('blur', this.onGameBlur, this);
-    this.game.events.off('focus', this.onGameFocus, this);
-    this.game.events.off('hidden', this.onGameBlur, this);
-    this.game.events.off('visible', this.onGameFocus, this);
+    // Remove browser window/document listeners
+    window.removeEventListener('blur', this.onWindowBlur);
+    window.removeEventListener('focus', this.onWindowFocus);
+    document.removeEventListener('visibilitychange', this.onVisibilityChange);
     
     // Remove keyboard listeners
     if (this.input.keyboard) {
