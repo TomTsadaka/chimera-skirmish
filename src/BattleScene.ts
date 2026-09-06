@@ -41,6 +41,8 @@ export class BattleScene extends Phaser.Scene {
   private resourceTexts: { biomass: Phaser.GameObjects.Text; dna: Phaser.GameObjects.Text } | null = null;
   private trainPanel: Phaser.GameObjects.Container | null = null;
   private dnaTrickleTimer: number = 0;
+  private armyRoster: HybridCreature[] = [];
+  private selectedUnitToTrain: HybridCreature | null = null;
   
   private readonly MAP_WIDTH = GAME_CONSTANTS.MAP_WIDTH;
   private readonly MAP_HEIGHT = GAME_CONSTANTS.MAP_HEIGHT;
@@ -55,9 +57,24 @@ export class BattleScene extends Phaser.Scene {
     super({ key: 'BattleScene' });
   }
 
-  create(data: { hybrid: HybridCreature }): void {
+  create(data: { armyRoster?: HybridCreature[]; hybrid?: HybridCreature }): void {
     this.gameEnded = false;
     this.controlGroups.clear();
+    
+    // Support both old (hybrid) and new (armyRoster) formats for compatibility
+    if (data.armyRoster && data.armyRoster.length > 0) {
+      this.armyRoster = data.armyRoster;
+      this.selectedUnitToTrain = this.armyRoster[0]; // Default to first unit
+      this.registry.set('lastHybrid', this.armyRoster[0]); // For compatibility
+    } else if (data.hybrid) {
+      // Fallback for old single-hybrid format
+      this.armyRoster = [data.hybrid];
+      this.selectedUnitToTrain = data.hybrid;
+      this.registry.set('lastHybrid', data.hybrid);
+    } else {
+      // No army at all, shouldn't happen
+      this.armyRoster = [];
+    }
     
     // Clear old units if restarting
     this.playerUnits = [];
@@ -83,8 +100,6 @@ export class BattleScene extends Phaser.Scene {
     if (this.minimap) {
       this.minimap.destroy();
     }
-    
-    this.registry.set('lastHybrid', data.hybrid);
 
     this.add.rectangle(this.MAP_WIDTH / 2, this.MAP_HEIGHT / 2, this.MAP_WIDTH, this.MAP_HEIGHT, 0x1a3a1a);
     
@@ -99,8 +114,10 @@ export class BattleScene extends Phaser.Scene {
     this.spawnResourceNodes();
     this.spawnWorkers();
     
-    // Then spawn combat armies
-    this.spawnPlayerArmy(data.hybrid);
+    // Spawn starting combat army (small starting force)
+    if (this.armyRoster.length > 0) {
+      this.spawnPlayerArmy(this.armyRoster[0]);
+    }
     this.spawnEnemyArmy();
 
     // Center camera on player HQ
@@ -196,15 +213,15 @@ export class BattleScene extends Phaser.Scene {
     
     const panelX = 50;
     const panelY = 150;
-    const panelWidth = 140;
-    const panelHeight = 160;
+    const panelWidth = 200;
+    const panelHeight = 420;
     
     const bg = this.add.rectangle(panelX, panelY, panelWidth, panelHeight, 0x000000, 0.85)
       .setOrigin(0, 0).setScrollFactor(0);
     this.trainPanel.add(bg);
     
-    const title = this.add.text(panelX + panelWidth / 2, panelY + 15, strings.economy.resources, {
-      fontSize: '16px',
+    const title = this.add.text(panelX + panelWidth / 2, panelY + 15, 'ייצור יחידות', {
+      fontSize: '18px',
       color: '#ffffff',
       fontFamily: 'Arial',
       fontStyle: 'bold'
@@ -212,12 +229,12 @@ export class BattleScene extends Phaser.Scene {
     this.trainPanel.add(title);
     
     // Train Worker button
-    const workerBtn = this.add.rectangle(panelX + panelWidth / 2, panelY + 50, 120, 35, 0x2DD4BF, 0.8)
+    const workerBtn = this.add.rectangle(panelX + panelWidth / 2, panelY + 50, 180, 35, 0x2DD4BF, 0.8)
       .setInteractive({ useHandCursor: true }).setScrollFactor(0);
     this.trainPanel.add(workerBtn);
     
     const workerText = this.add.text(panelX + panelWidth / 2, panelY + 50, strings.economy.trainWorker, {
-      fontSize: '13px',
+      fontSize: '14px',
       color: '#000000',
       fontFamily: 'Arial',
       fontStyle: 'bold'
@@ -231,34 +248,59 @@ export class BattleScene extends Phaser.Scene {
     }).setOrigin(0.5).setScrollFactor(0);
     this.trainPanel.add(workerCost);
     
-    // Train Combat Unit button
-    const unitBtn = this.add.rectangle(panelX + panelWidth / 2, panelY + 105, 120, 35, 0xF97316, 0.8)
-      .setInteractive({ useHandCursor: true }).setScrollFactor(0);
-    this.trainPanel.add(unitBtn);
+    workerBtn.on('pointerdown', () => this.trainWorker());
     
-    const unitText = this.add.text(panelX + panelWidth / 2, panelY + 105, strings.economy.trainUnit, {
-      fontSize: '13px',
-      color: '#000000',
-      fontFamily: 'Arial',
-      fontStyle: 'bold'
-    }).setOrigin(0.5).setScrollFactor(0);
-    this.trainPanel.add(unitText);
-    
-    // Get hybrid cost from registry
-    const hybrid = this.registry.get('lastHybrid') as HybridCreature;
-    const costDNA = hybrid?.costDNA || 70;
-    const costBiomass = hybrid?.costBiomass || 35;
-    
-    const unitCost = this.add.text(panelX + panelWidth / 2, panelY + 125, `${costDNA}D ${costBiomass}B`, {
-      fontSize: '11px',
-      color: '#ffffff',
+    // Separator
+    const separator = this.add.text(panelX + panelWidth / 2, panelY + 95, '─────────', {
+      fontSize: '14px',
+      color: '#666666',
       fontFamily: 'Arial'
     }).setOrigin(0.5).setScrollFactor(0);
-    this.trainPanel.add(unitCost);
+    this.trainPanel.add(separator);
     
-    // Button handlers
-    workerBtn.on('pointerdown', () => this.trainWorker());
-    unitBtn.on('pointerdown', () => this.trainCombatUnit());
+    // Army roster units (scrollable list)
+    let yOffset = 120;
+    for (let i = 0; i < this.armyRoster.length; i++) {
+      const hybrid = this.armyRoster[i];
+      const unitY = panelY + yOffset + i * 65;
+      
+      const isSelected = this.selectedUnitToTrain?.id === hybrid.id;
+      const unitBtn = this.add.rectangle(panelX + panelWidth / 2, unitY, 180, 60, isSelected ? 0xF97316 : 0x444444, 0.8)
+        .setInteractive({ useHandCursor: true }).setScrollFactor(0);
+      this.trainPanel.add(unitBtn);
+      
+      // Mini preview
+      const graphics = this.add.graphics();
+      graphics.fillStyle(parseInt(hybrid.primaryColor.replace('#', '0x')), 1);
+      graphics.fillCircle(panelX + 25, unitY, 12);
+      graphics.fillStyle(parseInt(hybrid.secondaryColor.replace('#', '0x')), 1);
+      graphics.fillCircle(panelX + 20, unitY + 5, 8);
+      this.trainPanel.add(graphics);
+      
+      const unitName = this.add.text(panelX + 50, unitY - 15, hybrid.name, {
+        fontSize: '11px',
+        color: '#ffffff',
+        fontFamily: 'Arial',
+        wordWrap: { width: 120 }
+      }).setOrigin(0, 0).setScrollFactor(0);
+      this.trainPanel.add(unitName);
+      
+      const unitCostText = this.add.text(panelX + 50, unitY + 5, `${hybrid.costDNA}D ${hybrid.costBiomass}B`, {
+        fontSize: '10px',
+        color: '#aaaaaa',
+        fontFamily: 'Arial'
+      }).setOrigin(0, 0).setScrollFactor(0);
+      this.trainPanel.add(unitCostText);
+      
+      // Select and train this unit
+      unitBtn.on('pointerdown', () => {
+        this.selectedUnitToTrain = hybrid;
+        this.trainCombatUnit();
+        // Refresh panel to show selection
+        this.trainPanel?.destroy();
+        this.createTrainPanel();
+      });
+    }
   }
 
   private setupInput(): void {
@@ -572,8 +614,10 @@ export class BattleScene extends Phaser.Scene {
   }
   
   private trainCombatUnit(): void {
-    // Use the player's hybrid from registry
-    const hybrid = this.registry.get('lastHybrid') as HybridCreature;
+    // Use the selected unit from army roster
+    const hybrid = this.selectedUnitToTrain || this.armyRoster[0];
+    
+    if (!hybrid) return;
     
     if (this.playerResources.dna >= hybrid.costDNA &&
         this.playerResources.biomass >= hybrid.costBiomass) {

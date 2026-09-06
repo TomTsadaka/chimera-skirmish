@@ -3,15 +3,20 @@ import { HybridCreature } from './types';
 import { strings, colors } from './i18n';
 
 export class DeployScene extends Phaser.Scene {
-  private hybrid!: HybridCreature;
   private onboardingShown: boolean = false;
 
   constructor() {
     super({ key: 'DeployScene' });
   }
 
-  create(data: { hybrid: HybridCreature }): void {
-    this.hybrid = data.hybrid;
+  create(data: { armyRoster: HybridCreature[] }): void {
+    const armyRoster = data.armyRoster || [];
+    
+    if (armyRoster.length === 0) {
+      // No army, go back to forge
+      this.scene.start('MainMenuScene');
+      return;
+    }
 
     this.add.text(400, 30, strings.deploy.title, {
       fontSize: '48px',
@@ -20,15 +25,47 @@ export class DeployScene extends Phaser.Scene {
       fontFamily: 'Arial'
     }).setOrigin(0.5);
 
-    this.add.rectangle(200, 300, 280, 350, 0x1a1a2e, 0.9);
-    this.add.text(200, 150, strings.deploy.you, {
+    this.add.rectangle(200, 300, 280, 450, 0x1a1a2e, 0.9);
+    this.add.text(200, 100, strings.deploy.you, {
       fontSize: '28px',
       color: colors.playerHex,
       fontStyle: 'bold',
       fontFamily: 'Arial'
     }).setOrigin(0.5);
-
-    this.showHybridCard(this.hybrid, 200, 300);
+    
+    // Show army roster on left
+    this.add.text(200, 135, `${armyRoster.length} יחידות`, {
+      fontSize: '16px',
+      color: '#aaaaaa',
+      fontFamily: 'Arial'
+    }).setOrigin(0.5);
+    
+    // Show first 3 hybrids as preview
+    for (let i = 0; i < Math.min(3, armyRoster.length); i++) {
+      const hybrid = armyRoster[i];
+      const y = 180 + i * 100;
+      
+      const graphics = this.add.graphics();
+      graphics.fillStyle(parseInt(hybrid.primaryColor.replace('#', '0x')), 1);
+      graphics.fillCircle(200, y, 20);
+      graphics.fillStyle(parseInt(hybrid.secondaryColor.replace('#', '0x')), 1);
+      graphics.fillCircle(190, y + 10, 14);
+      
+      this.add.text(200, y + 35, hybrid.name, {
+        fontSize: '12px',
+        color: '#ffffff',
+        fontFamily: 'Arial',
+        wordWrap: { width: 150 }
+      }).setOrigin(0.5);
+    }
+    
+    if (armyRoster.length > 3) {
+      this.add.text(200, 480, `+${armyRoster.length - 3} עוד`, {
+        fontSize: '14px',
+        color: '#888888',
+        fontFamily: 'Arial'
+      }).setOrigin(0.5);
+    }
 
     this.add.rectangle(600, 300, 280, 350, 0x1a1a2e, 0.9);
     this.add.text(600, 150, strings.deploy.rival, {
@@ -43,7 +80,7 @@ export class DeployScene extends Phaser.Scene {
       color: '#666666',
       fontFamily: 'Arial'
     }).setOrigin(0.5);
-    this.add.text(600, 310, '3-6 יריבים', {
+    this.add.text(600, 310, 'AI יריב', {
       fontSize: '18px',
       color: '#888888',
       fontFamily: 'Arial'
@@ -59,7 +96,7 @@ export class DeployScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     startBtn.on('pointerdown', () => {
-      this.scene.start('BattleScene', { hybrid: this.hybrid });
+      this.scene.start('BattleScene', { armyRoster: armyRoster });
     });
 
     const backBtn = this.add.rectangle(400, 560, 160, 40, 0x666666)
@@ -77,71 +114,6 @@ export class DeployScene extends Phaser.Scene {
     if (!this.onboardingShown) {
       this.showOnboardingTip(strings.onboard.deploy, 400, 430);
     }
-  }
-
-  private showHybridCard(hybrid: HybridCreature, x: number, y: number): void {
-    const graphics = this.add.graphics();
-    graphics.fillStyle(parseInt(hybrid.primaryColor.replace('#', '0x')), 1);
-    graphics.fillCircle(x, y - 60, 30);
-    graphics.fillStyle(parseInt(hybrid.secondaryColor.replace('#', '0x')), 1);
-    graphics.fillCircle(x - 20, y - 40, 22);
-
-    this.add.text(x, y - 10, hybrid.name, {
-      fontSize: '22px',
-      color: '#ffffff',
-      fontStyle: 'bold',
-      fontFamily: 'Arial'
-    }).setOrigin(0.5);
-
-    const statY = y + 20;
-    const lineHeight = 28;
-
-    this.add.text(x - 80, statY, strings.stat.hp, {
-      fontSize: '16px',
-      color: '#aaaaaa',
-      fontFamily: 'Arial'
-    });
-    this.add.text(x + 40, statY, hybrid.hp.toString(), {
-      fontSize: '16px',
-      color: '#ffffff',
-      fontFamily: 'Arial'
-    });
-
-    this.add.text(x - 80, statY + lineHeight, strings.stat.atk, {
-      fontSize: '16px',
-      color: '#aaaaaa',
-      fontFamily: 'Arial'
-    });
-    this.add.text(x + 40, statY + lineHeight, hybrid.attack.toString(), {
-      fontSize: '16px',
-      color: '#ffffff',
-      fontFamily: 'Arial'
-    });
-
-    this.add.text(x - 80, statY + lineHeight * 2, strings.stat.spd, {
-      fontSize: '16px',
-      color: '#aaaaaa',
-      fontFamily: 'Arial'
-    });
-    this.add.text(x + 40, statY + lineHeight * 2, hybrid.speed.toString(), {
-      fontSize: '16px',
-      color: '#ffffff',
-      fontFamily: 'Arial'
-    });
-
-    this.add.text(x, statY + lineHeight * 3.5, strings.stat.tag + ':', {
-      fontSize: '14px',
-      color: '#888888',
-      fontFamily: 'Arial'
-    }).setOrigin(0.5);
-
-    this.add.text(x, statY + lineHeight * 4.2, hybrid.specialPrimary, {
-      fontSize: '12px',
-      color: '#ffaa00',
-      wordWrap: { width: 240 },
-      align: 'center',
-      fontFamily: 'Arial'
-    }).setOrigin(0.5);
   }
 
   private showOnboardingTip(text: string, x: number, y: number): void {
