@@ -535,6 +535,8 @@ export class BattleScene extends Phaser.Scene {
       const node = new ResourceNode(this, nodeData);
       this.resourceNodes.push(node);
     }
+    
+    // Note: Player-side nodes will be visible through initial fog update with player units nearby
   }
   
   private spawnWorkers(): void {
@@ -997,16 +999,32 @@ export class BattleScene extends Phaser.Scene {
       }
 
       // Combat units can attack enemy HQ
-      if (unit.role === 'combat' && unit.targetEnemy === null) {
+      if (unit.role === 'combat') {
         const enemyHQ = unit.team === 'player' ? this.enemyHQ : this.playerHQ;
         const distanceToHQ = Phaser.Math.Distance.Between(unit.x, unit.y, enemyHQ.x, enemyHQ.y);
         
-        // Auto-attack nearby enemy HQ if no other target
-        if (distanceToHQ <= unit.creature.range * 50) {
-          if (unit.attackCooldown === 0) {
-            enemyHQ.takeDamage(unit.creature.attack);
+        // Auto-attack nearby enemy HQ if in range (fixed range calculation)
+        if (distanceToHQ <= unit.creature.range + 50) {
+          if (unit.attackCooldown <= 0) {
+            const destroyed = enemyHQ.takeDamage(unit.creature.attack);
             unit.attackCooldown = 1000;
+            
+            // Trigger win/lose immediately when HQ destroyed
+            if (destroyed) {
+              this.gameEnded = true;
+              if (unit.team === 'player') {
+                this.time.delayedCall(500, () => {
+                  this.scene.start('GameOverScene', { victory: true, message: strings.win.destroyBase });
+                });
+              } else {
+                this.time.delayedCall(500, () => {
+                  this.scene.start('GameOverScene', { victory: false, message: strings.lose.baseDown });
+                });
+              }
+              return;
+            }
           }
+          continue; // Don't also attack units when attacking HQ
         }
       }
 
