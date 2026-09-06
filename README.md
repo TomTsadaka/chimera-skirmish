@@ -71,12 +71,20 @@ The game will open automatically at `http://localhost:3000`
 - Use **Create More** to return to the forge
 
 #### Battle Phase
-- **Left-click**: Select a single unit
-- **Click-drag**: Box select multiple units
-- **Shift + Click**: Add units to selection
-- **Right-click ground**: Move selected units
+**Selection:**
+- **Left-click unit**: Select single unit (clears previous)
+- **Left-click empty**: Deselect all
+- **Shift + Left-click**: Add/remove unit from selection
+- **Left-click drag**: Box select multiple units
+- **Ctrl+A**: Select all your units
+
+**Commands:**
+- **Right-click ground**: Move selected units to location
 - **Right-click enemy**: Attack target with selected units
 - Units automatically engage nearby enemies
+- Units retarget to nearest enemy when current target dies
+- Visual feedback: Green selection ring + HP bar on selected units
+- Click marker shows where orders were issued
 
 ## Technology Stack
 

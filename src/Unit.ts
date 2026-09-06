@@ -74,13 +74,22 @@ export class Unit extends Phaser.GameObjects.Container {
 
   setSelected(selected: boolean): void {
     this.isSelected = selected;
-    this.selectionCircle.setStrokeStyle(2, 0x00ff00, selected ? 1 : 0);
+    if (this.currentHp > 0) {
+      this.selectionCircle.setStrokeStyle(3, 0x00ff00, selected ? 1 : 0);
+    } else {
+      this.selectionCircle.setStrokeStyle(0, 0x00ff00, 0);
+    }
   }
 
   takeDamage(damage: number): boolean {
     this.currentHp = Math.max(0, this.currentHp - damage);
     this.updateHpBar();
-    return this.currentHp <= 0;
+    
+    if (this.currentHp <= 0) {
+      this.setSelected(false);
+      return true;
+    }
+    return false;
   }
 
   moveToPosition(targetX: number, targetY: number): void {

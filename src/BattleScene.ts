@@ -11,20 +11,24 @@ export class BattleScene extends Phaser.Scene {
   private ai!: AI;
   private selectionBox: Phaser.GameObjects.Rectangle | null = null;
   private selectionStart: { x: number; y: number } | null = null;
+  private gameEnded: boolean = false;
+  private clickMarker: Phaser.GameObjects.Arc | null = null;
 
   constructor() {
     super({ key: 'BattleScene' });
   }
 
   create(data: { armySlots: ArmySlot[] }): void {
+    this.gameEnded = false;
+    
     this.add.text(400, 20, 'BATTLE ARENA', {
       fontSize: '32px',
       color: '#ffffff',
       fontStyle: 'bold'
     }).setOrigin(0.5);
 
-    this.add.text(100, 20, 'Left-click: Select | Right-click: Move/Attack', {
-      fontSize: '14px',
+    this.add.text(100, 20, 'Left-click: Select | Right-click: Move/Attack | Shift: Multi-select', {
+      fontSize: '12px',
       color: '#aaaaaa'
     });
 
@@ -38,6 +42,12 @@ export class BattleScene extends Phaser.Scene {
     this.input.on('pointerdown', this.onPointerDown, this);
     this.input.on('pointermove', this.onPointerMove, this);
     this.input.on('pointerup', this.onPointerUp, this);
+
+    this.input.keyboard!.on('keydown-A', (event: KeyboardEvent) => {
+      if (event.ctrlKey && !this.gameEnded) {
+        this.selectAllPlayerUnits();
+      }
+    });
 
     this.input.mouse!.disableContextMenu();
   }
@@ -65,27 +75,30 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private spawnEnemyArmy(): void {
-    const enemyCount = Math.min(10, this.playerUnits.length + 2);
-    const startX = 650;
-    const startY = 300;
-    const spacing = 60;
+    const enemyCount = Math.min(6, Math.max(3, this.playerUnits.length));
+    const spawnPoints = [
+      { x: 650, y: 200 },
+      { x: 680, y: 250 },
+      { x: 650, y: 300 },
+      { x: 680, y: 350 },
+      { x: 650, y: 400 },
+      { x: 680, y: 450 }
+    ];
 
     for (let i = 0; i < enemyCount; i++) {
       const animal1 = Phaser.Math.RND.pick(ANIMAL_ARCHETYPES);
       const animal2 = Phaser.Math.RND.pick(ANIMAL_ARCHETYPES.filter(a => a.id !== animal1.id));
       const hybrid = GameData.createHybrid(animal1, animal2);
 
-      const col = i % 4;
-      const row = Math.floor(i / 4);
-      const x = startX + col * spacing;
-      const y = startY + row * spacing;
-
-      const unit = new Unit(this, x, y, hybrid, 'enemy');
+      const spawnPoint = spawnPoints[i];
+      const unit = new Unit(this, spawnPoint.x, spawnPoint.y, hybrid, 'enemy');
       this.enemyUnits.push(unit);
     }
   }
 
   private onPointerDown(pointer: Phaser.Input.Pointer): void {
+    if (this.gameEnded) return;
+    
     if (pointer.leftButtonDown()) {
       this.selectionStart = { x: pointer.x, y: pointer.y };
       
@@ -93,6 +106,12 @@ export class BattleScene extends Phaser.Scene {
       if (clickedUnit && clickedUnit.team === 'player') {
         if (!pointer.event.shiftKey) {
           this.clearSelection();
+        } else {
+          if (this.selectedUnits.includes(clickedUnit)) {
+            clickedUnit.setSelected(false);
+            this.selectedUnits = this.selectedUnits.filter(u => u !== clickedUnit);
+            return;
+          }
         }
         clickedUnit.setSelected(true);
         if (!this.selectedUnits.includes(clickedUnit)) {
@@ -103,6 +122,7 @@ export class BattleScene extends Phaser.Scene {
       }
     } else if (pointer.rightButtonDown()) {
       this.issueOrderToSelected(pointer.x, pointer.y);
+      this.showClickMarker(pointer.x, pointer.y);
     }
   }
 
@@ -125,19 +145,31 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private onPointerUp(pointer: Phaser.Input.Pointer): void {
+    if (this.gameEnded) return;
+    
     if (this.selectionBox && this.selectionStart) {
       const bounds = this.selectionBox.getBounds();
+      const boxWidth = Math.abs(pointer.x - this.selectionStart.x);
+      const boxHeight = Math.abs(pointer.y - this.selectionStart.y);
       
-      if (!pointer.event.shiftKey) {
-        this.clearSelection();
-      }
+      if (boxWidth > 5 || boxHeight > 5) {
+        if (!pointer.event.shiftKey) {
+          this.clearSelection();
+        }
 
-      for (const unit of this.playerUnits) {
-        if (bounds.contains(unit.x, unit.y)) {
-          unit.setSelected(true);
-          if (!this.selectedUnits.includes(unit)) {
-            this.selectedUnits.push(unit);
+        let foundAny = false;
+        for (const unit of this.playerUnits) {
+          if (bounds.contains(unit.x, unit.y)) {
+            unit.setSelected(true);
+            if (!this.selectedUnits.includes(unit)) {
+              this.selectedUnits.push(unit);
+            }
+            foundAny = true;
           }
+        }
+        
+        if (!foundAny && !pointer.event.shiftKey) {
+          this.clearSelection();
         }
       }
 
@@ -178,12 +210,64 @@ export class BattleScene extends Phaser.Scene {
     this.selectedUnits = [];
   }
 
+  private selectAllPlayerUnits(): void {
+    this.clearSelection();
+    for (const unit of this.playerUnits) {
+      unit.setSelected(true);
+      this.selectedUnits.push(unit);
+    }
+  }
+
+  private showClickMarker(x: number, y: number): void {
+    if (this.clickMarker) {
+      this.clickMarker.destroy();
+    }
+    
+    this.clickMarker = this.add.circle(x, y, 8, 0x00ff00, 0.6);
+    
+    this.tweens.add({
+      targets: this.clickMarker,
+      alpha: 0,
+      scale: 1.5,
+      duration: 300,
+      onComplete: () => {
+        if (this.clickMarker) {
+          this.clickMarker.destroy();
+          this.clickMarker = null;
+        }
+      }
+    });
+  }
+
   update(_time: number, delta: number): void {
-    this.playerUnits = this.playerUnits.filter(unit => unit.currentHp > 0);
-    this.enemyUnits = this.enemyUnits.filter(unit => unit.currentHp > 0);
+    this.playerUnits = this.playerUnits.filter(unit => {
+      if (unit.currentHp <= 0) {
+        unit.destroy();
+        return false;
+      }
+      return true;
+    });
+    
+    this.enemyUnits = this.enemyUnits.filter(unit => {
+      if (unit.currentHp <= 0) {
+        unit.destroy();
+        return false;
+      }
+      return true;
+    });
+    
+    this.selectedUnits = this.selectedUnits.filter(unit => unit.currentHp > 0);
 
     for (const unit of [...this.playerUnits, ...this.enemyUnits]) {
       unit.update(delta);
+
+      if (unit.targetEnemy && unit.targetEnemy.currentHp <= 0) {
+        const nearest = unit.findNearestEnemy(unit.team === 'player' ? this.enemyUnits : this.playerUnits);
+        unit.targetEnemy = nearest;
+        if (nearest) {
+          unit.moveToPosition(nearest.x, nearest.y);
+        }
+      }
 
       if (unit.targetEnemy) {
         const distance = Phaser.Math.Distance.Between(
@@ -202,10 +286,18 @@ export class BattleScene extends Phaser.Scene {
 
     this.ai.update();
 
-    if (this.playerUnits.length === 0) {
-      this.scene.start('GameOverScene', { victory: false });
-    } else if (this.enemyUnits.length === 0) {
-      this.scene.start('GameOverScene', { victory: true });
+    if (!this.gameEnded) {
+      if (this.playerUnits.length === 0) {
+        this.gameEnded = true;
+        this.time.delayedCall(500, () => {
+          this.scene.start('GameOverScene', { victory: false });
+        });
+      } else if (this.enemyUnits.length === 0) {
+        this.gameEnded = true;
+        this.time.delayedCall(500, () => {
+          this.scene.start('GameOverScene', { victory: true });
+        });
+      }
     }
   }
 }
