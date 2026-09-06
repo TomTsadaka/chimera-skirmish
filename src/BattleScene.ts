@@ -288,20 +288,28 @@ export class BattleScene extends Phaser.Scene {
   private onPointerDown(pointer: Phaser.Input.Pointer): void {
     if (this.gameEnded) return;
     
+    // Use camera.getWorldPoint for reliable world coordinate conversion
+    const cam = this.cameras.main;
+    const worldPoint = cam.getWorldPoint(pointer.x, pointer.y);
+    const worldX = worldPoint.x;
+    const worldY = worldPoint.y;
+    
     console.log('[DEBUG] onPointerDown:', {
       screenX: pointer.x,
       screenY: pointer.y,
-      worldX: pointer.worldX,
-      worldY: pointer.worldY,
-      cameraX: this.cameras.main.scrollX,
-      cameraY: this.cameras.main.scrollY,
-      zoom: this.cameras.main.zoom
+      pointerWorldX: pointer.worldX,
+      pointerWorldY: pointer.worldY,
+      getWorldPointX: worldX,
+      getWorldPointY: worldY,
+      cameraX: cam.scrollX,
+      cameraY: cam.scrollY,
+      zoom: cam.zoom
     });
     
     if (pointer.leftButtonDown()) {
-      this.selectionStart = { x: pointer.worldX, y: pointer.worldY };
+      this.selectionStart = { x: worldX, y: worldY };
       
-      const clickedUnit = this.getUnitAtPosition(pointer.worldX, pointer.worldY);
+      const clickedUnit = this.getUnitAtPosition(worldX, worldY);
       console.log('[DEBUG] clickedUnit:', clickedUnit ? `${clickedUnit.team} at (${clickedUnit.x}, ${clickedUnit.y})` : 'null');
       
       if (clickedUnit && clickedUnit.team === 'player') {
@@ -323,24 +331,27 @@ export class BattleScene extends Phaser.Scene {
         this.clearSelection();
       }
     } else if (pointer.rightButtonDown()) {
-      console.log('[DEBUG] RMB order to:', pointer.worldX, pointer.worldY, 'selectedUnits:', this.selectedUnits.length);
-      this.issueOrderToSelected(pointer.worldX, pointer.worldY);
-      this.showClickMarker(pointer.worldX, pointer.worldY);
+      console.log('[DEBUG] RMB order to:', worldX, worldY, 'selectedUnits:', this.selectedUnits.length);
+      this.issueOrderToSelected(worldX, worldY);
+      this.showClickMarker(worldX, worldY);
     }
   }
 
   private onPointerMove(pointer: Phaser.Input.Pointer): void {
     if (pointer.leftButtonDown() && this.selectionStart) {
+      const cam = this.cameras.main;
+      const worldPoint = cam.getWorldPoint(pointer.x, pointer.y);
+      
       if (!this.selectionBox) {
         this.selectionBox = this.add.rectangle(0, 0, 0, 0)
           .setStrokeStyle(2, 0x00ff00)
           .setFillStyle(0x00ff00, 0.1);
       }
 
-      const x = Math.min(this.selectionStart.x, pointer.worldX);
-      const y = Math.min(this.selectionStart.y, pointer.worldY);
-      const width = Math.abs(pointer.worldX - this.selectionStart.x);
-      const height = Math.abs(pointer.worldY - this.selectionStart.y);
+      const x = Math.min(this.selectionStart.x, worldPoint.x);
+      const y = Math.min(this.selectionStart.y, worldPoint.y);
+      const width = Math.abs(worldPoint.x - this.selectionStart.x);
+      const height = Math.abs(worldPoint.y - this.selectionStart.y);
 
       this.selectionBox.setPosition(x + width / 2, y + height / 2);
       this.selectionBox.setSize(width, height);
@@ -350,13 +361,17 @@ export class BattleScene extends Phaser.Scene {
   private onPointerUp(pointer: Phaser.Input.Pointer): void {
     if (this.gameEnded || this.helpOverlay) return;
     
-    const worldX = pointer.worldX;
-    const worldY = pointer.worldY;
+    const cam = this.cameras.main;
+    const worldPoint = cam.getWorldPoint(pointer.x, pointer.y);
+    const worldX = worldPoint.x;
+    const worldY = worldPoint.y;
     
     if (this.selectionBox && this.selectionStart) {
       const bounds = this.selectionBox.getBounds();
       const boxWidth = Math.abs(worldX - this.selectionStart.x);
       const boxHeight = Math.abs(worldY - this.selectionStart.y);
+      
+      console.log('[DEBUG] onPointerUp box select:', { bounds, boxWidth, boxHeight });
       
       if (boxWidth > 5 || boxHeight > 5) {
         if (!pointer.event.shiftKey) {
@@ -373,12 +388,12 @@ export class BattleScene extends Phaser.Scene {
             foundAny = true;
           }
         }
-        
+
         if (!foundAny && !pointer.event.shiftKey) {
           this.clearSelection();
         }
       }
-
+      
       this.selectionBox.destroy();
       this.selectionBox = null;
       this.selectionStart = null;
