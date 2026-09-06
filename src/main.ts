@@ -1,20 +1,27 @@
-import Phaser from 'phaser';
-import { MainMenuScene } from './MainMenuScene';
-import { DeployScene } from './DeployScene';
-import { BattleScene } from './BattleScene';
-import { GameOverScene } from './GameOverScene';
+import { Scene3D } from './3d/Scene3D';
 
-const config: Phaser.Types.Core.GameConfig = {
-  type: Phaser.AUTO,
-  width: 800,
-  height: 600,
-  parent: 'game-container',
-  backgroundColor: '#1a1a2e',
-  scene: [MainMenuScene, DeployScene, BattleScene, GameOverScene],
-  scale: {
-    mode: Phaser.Scale.FIT,
-    autoCenter: Phaser.Scale.CENTER_BOTH
+// Create container for the game
+const container = document.createElement('div');
+container.id = 'threejs-container';
+container.style.cssText = `
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+`;
+document.body.appendChild(container);
+
+// Initialize the 3D scene
+const scene3d = new Scene3D(container);
+scene3d.start();
+
+// Handle page visibility
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    // Pause or handle minimization
+  } else {
+    // Resume
   }
-};
-
-new Phaser.Game(config);
+});
