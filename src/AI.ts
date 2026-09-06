@@ -15,7 +15,12 @@ export class AI {
   private spawnPositions: Map<Unit, { x: number; y: number }> = new Map();
   private lastRetargetTime: Map<Unit, number> = new Map();
   private lastTrainTime: number = 0;
-  private readonly TRAIN_INTERVAL = 5000; // Train every 5 seconds if resources allow
+  private readonly TRAIN_INTERVAL = 5000; // Train every 5 seconds
+  
+  // P0 Wave logic
+  private waveState: 'bat' | 'deer' | 'snake' | 'cheapest' = 'bat';
+  private waveCount: { bat: number; deer: number; snake: number } = { bat: 0, deer: 0, snake: 0 };
+  private readonly WAVE_TARGETS = { bat: 2, deer: 2, snake: 2 }; // 2 bat, 2 deer, 1-2 snake if resources allow
 
   constructor(
     units: Unit[], 
@@ -110,19 +115,53 @@ export class AI {
       
       const workers = this.units.filter(u => u.role === 'worker').length;
       
-      // Maintain a good worker count (2-4 workers)
+      // Maintain worker count (2-4 workers)
       if (workers < 4 && 
           this.resources.dna >= GAME_CONSTANTS.WORKER_COST_DNA &&
           this.resources.biomass >= GAME_CONSTANTS.WORKER_COST_BIOMASS) {
         this.trainWorker();
+        return;
       }
-      // Train combat units if we have enough resources and workers
-      else if (workers >= 2) {
-        // Pick a random archetype and train if we can afford it
-        const archetype = Phaser.Math.RND.pick(ANIMAL_ARCHETYPES);
-        if (this.resources.dna >= archetype.costDNA &&
-            this.resources.biomass >= archetype.costBiomass) {
-          this.trainCombatUnit(archetype);
+      
+      // P0 Wave logic: bat×2 → deer×2 → snake×1-2 → cheapest loop
+      if (workers >= 2) {
+        const batEcho = ANIMAL_ARCHETYPES.find(a => a.id === 'bat-echo');
+        const hornDeer = ANIMAL_ARCHETYPES.find(a => a.id === 'horn-deer');
+        const quillSnake = ANIMAL_ARCHETYPES.find(a => a.id === 'quill-snake');
+        
+        if (this.waveState === 'bat' && batEcho) {
+          if (this.resources.dna >= batEcho.costDNA && this.resources.biomass >= batEcho.costBiomass) {
+            this.trainCombatUnit(batEcho);
+            this.waveCount.bat++;
+            if (this.waveCount.bat >= this.WAVE_TARGETS.bat) {
+              this.waveState = 'deer';
+            }
+          }
+        } else if (this.waveState === 'deer' && hornDeer) {
+          if (this.resources.dna >= hornDeer.costDNA && this.resources.biomass >= hornDeer.costBiomass) {
+            this.trainCombatUnit(hornDeer);
+            this.waveCount.deer++;
+            if (this.waveCount.deer >= this.WAVE_TARGETS.deer) {
+              this.waveState = 'snake';
+            }
+          }
+        } else if (this.waveState === 'snake' && quillSnake) {
+          if (this.resources.dna >= quillSnake.costDNA && this.resources.biomass >= quillSnake.costBiomass) {
+            this.trainCombatUnit(quillSnake);
+            this.waveCount.snake++;
+            if (this.waveCount.snake >= this.WAVE_TARGETS.snake) {
+              this.waveState = 'cheapest';
+            }
+          }
+        } else if (this.waveState === 'cheapest') {
+          // Train cheapest affordable unit
+          const affordable = [batEcho, hornDeer, quillSnake]
+            .filter(a => a && this.resources.dna >= a.costDNA && this.resources.biomass >= a.costBiomass)
+            .sort((a, b) => (a!.costDNA + a!.costBiomass) - (b!.costDNA + b!.costBiomass));
+          
+          if (affordable.length > 0 && affordable[0]) {
+            this.trainCombatUnit(affordable[0]);
+          }
         }
       }
     }

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { HybridCreature, EconomyState, ResourceNode as ResourceNodeType } from './types';
+import { HybridCreature, EconomyState, ResourceNode as ResourceNodeType, AnimalArchetype } from './types';
 import { Unit } from './Unit';
 import { Building } from './Building';
 import { ResourceNode } from './ResourceNode';
@@ -213,14 +213,14 @@ export class BattleScene extends Phaser.Scene {
     
     const panelX = 50;
     const panelY = 150;
-    const panelWidth = 200;
-    const panelHeight = 420;
+    const panelWidth = 180;
+    const panelHeight = 300;
     
     const bg = this.add.rectangle(panelX, panelY, panelWidth, panelHeight, 0x000000, 0.85)
       .setOrigin(0, 0).setScrollFactor(0);
     this.trainPanel.add(bg);
     
-    const title = this.add.text(panelX + panelWidth / 2, panelY + 15, 'ייצור יחידות', {
+    const title = this.add.text(panelX + panelWidth / 2, panelY + 15, strings.panel.train, {
       fontSize: '18px',
       color: '#ffffff',
       fontFamily: 'Arial',
@@ -228,78 +228,75 @@ export class BattleScene extends Phaser.Scene {
     }).setOrigin(0.5, 0).setScrollFactor(0);
     this.trainPanel.add(title);
     
-    // Train Worker button
-    const workerBtn = this.add.rectangle(panelX + panelWidth / 2, panelY + 50, 180, 35, 0x2DD4BF, 0.8)
-      .setInteractive({ useHandCursor: true }).setScrollFactor(0);
-    this.trainPanel.add(workerBtn);
+    // P0: Worker + 3 cheap units only (Bat-Echo, Horn-Deer, Quill-Snake)
+    const p0Units: Array<{ name: string; cost: { dna: number; biomass: number }; type: 'worker' | 'unit' | 'archetype'; hybrid?: HybridCreature; archetype?: AnimalArchetype }> = [
+      { name: strings.panel.worker, cost: { dna: GAME_CONSTANTS.WORKER_COST_DNA, biomass: GAME_CONSTANTS.WORKER_COST_BIOMASS }, type: 'worker' },
+      ...this.armyRoster.filter(h => 
+        h.parent1.id === 'bat-echo' || h.parent2.id === 'bat-echo' ||
+        h.parent1.id === 'horn-deer' || h.parent2.id === 'horn-deer' ||
+        h.parent1.id === 'quill-snake' || h.parent2.id === 'quill-snake'
+      ).slice(0, 3).map(h => ({ name: h.name, cost: { dna: h.costDNA, biomass: h.costBiomass }, type: 'unit' as const, hybrid: h }))
+    ];
     
-    const workerText = this.add.text(panelX + panelWidth / 2, panelY + 50, strings.economy.trainWorker, {
-      fontSize: '14px',
-      color: '#000000',
-      fontFamily: 'Arial',
-      fontStyle: 'bold'
-    }).setOrigin(0.5).setScrollFactor(0);
-    this.trainPanel.add(workerText);
-    
-    const workerCost = this.add.text(panelX + panelWidth / 2, panelY + 70, `${GAME_CONSTANTS.WORKER_COST_DNA}D ${GAME_CONSTANTS.WORKER_COST_BIOMASS}B`, {
-      fontSize: '11px',
-      color: '#ffffff',
-      fontFamily: 'Arial'
-    }).setOrigin(0.5).setScrollFactor(0);
-    this.trainPanel.add(workerCost);
-    
-    workerBtn.on('pointerdown', () => this.trainWorker());
-    
-    // Separator
-    const separator = this.add.text(panelX + panelWidth / 2, panelY + 95, '─────────', {
-      fontSize: '14px',
-      color: '#666666',
-      fontFamily: 'Arial'
-    }).setOrigin(0.5).setScrollFactor(0);
-    this.trainPanel.add(separator);
-    
-    // Army roster units (scrollable list)
-    let yOffset = 120;
-    for (let i = 0; i < this.armyRoster.length; i++) {
-      const hybrid = this.armyRoster[i];
-      const unitY = panelY + yOffset + i * 65;
+    // If no matching P0 units in roster, add defaults
+    if (p0Units.length < 4) {
+      const batEcho = ANIMAL_ARCHETYPES.find(a => a.id === 'bat-echo');
+      const hornDeer = ANIMAL_ARCHETYPES.find(a => a.id === 'horn-deer');
+      const quillSnake = ANIMAL_ARCHETYPES.find(a => a.id === 'quill-snake');
       
-      const isSelected = this.selectedUnitToTrain?.id === hybrid.id;
-      const unitBtn = this.add.rectangle(panelX + panelWidth / 2, unitY, 180, 60, isSelected ? 0xF97316 : 0x444444, 0.8)
-        .setInteractive({ useHandCursor: true }).setScrollFactor(0);
+      if (batEcho && p0Units.length === 1) {
+        p0Units.push({ name: batEcho.nameHebrew, cost: { dna: batEcho.costDNA, biomass: batEcho.costBiomass }, type: 'archetype', archetype: batEcho });
+      }
+      if (hornDeer && p0Units.length === 2) {
+        p0Units.push({ name: hornDeer.nameHebrew, cost: { dna: hornDeer.costDNA, biomass: hornDeer.costBiomass }, type: 'archetype', archetype: hornDeer });
+      }
+      if (quillSnake && p0Units.length === 3) {
+        p0Units.push({ name: quillSnake.nameHebrew, cost: { dna: quillSnake.costDNA, biomass: quillSnake.costBiomass }, type: 'archetype', archetype: quillSnake });
+      }
+    }
+    
+    let yOffset = 50;
+    for (let i = 0; i < p0Units.length; i++) {
+      const unitData = p0Units[i];
+      const unitY = panelY + yOffset + i * 60;
+      
+      const canAfford = this.playerResources.dna >= unitData.cost.dna && 
+                       this.playerResources.biomass >= unitData.cost.biomass;
+      
+      const unitBtn = this.add.rectangle(panelX + panelWidth / 2, unitY, 160, 50, canAfford ? 0x2DD4BF : 0x666666, 0.8)
+        .setInteractive({ useHandCursor: canAfford }).setScrollFactor(0);
       this.trainPanel.add(unitBtn);
       
-      // Mini preview
-      const graphics = this.add.graphics();
-      graphics.fillStyle(parseInt(hybrid.primaryColor.replace('#', '0x')), 1);
-      graphics.fillCircle(panelX + 25, unitY, 12);
-      graphics.fillStyle(parseInt(hybrid.secondaryColor.replace('#', '0x')), 1);
-      graphics.fillCircle(panelX + 20, unitY + 5, 8);
-      this.trainPanel.add(graphics);
-      
-      const unitName = this.add.text(panelX + 50, unitY - 15, hybrid.name, {
-        fontSize: '11px',
-        color: '#ffffff',
+      const unitName = this.add.text(panelX + panelWidth / 2, unitY - 10, unitData.name, {
+        fontSize: '13px',
+        color: canAfford ? '#ffffff' : '#888888',
         fontFamily: 'Arial',
-        wordWrap: { width: 120 }
-      }).setOrigin(0, 0).setScrollFactor(0);
+        fontStyle: 'bold'
+      }).setOrigin(0.5).setScrollFactor(0);
       this.trainPanel.add(unitName);
       
-      const unitCostText = this.add.text(panelX + 50, unitY + 5, `${hybrid.costDNA}D ${hybrid.costBiomass}B`, {
-        fontSize: '10px',
-        color: '#aaaaaa',
+      const unitCostText = this.add.text(panelX + panelWidth / 2, unitY + 10, `${unitData.cost.dna}D ${unitData.cost.biomass}B`, {
+        fontSize: '11px',
+        color: canAfford ? '#ffffff' : '#666666',
         fontFamily: 'Arial'
-      }).setOrigin(0, 0).setScrollFactor(0);
+      }).setOrigin(0.5).setScrollFactor(0);
       this.trainPanel.add(unitCostText);
       
-      // Select and train this unit
-      unitBtn.on('pointerdown', () => {
-        this.selectedUnitToTrain = hybrid;
-        this.trainCombatUnit();
-        // Refresh panel to show selection
-        this.trainPanel?.destroy();
-        this.createTrainPanel();
-      });
+      if (canAfford) {
+        unitBtn.on('pointerdown', () => {
+          if (unitData.type === 'worker') {
+            this.trainWorker();
+          } else if (unitData.type === 'unit' && unitData.hybrid) {
+            this.selectedUnitToTrain = unitData.hybrid;
+            this.trainCombatUnit();
+          } else if (unitData.type === 'archetype' && unitData.archetype) {
+            this.trainArchetype(unitData.archetype);
+          }
+          // Refresh panel after training
+          this.trainPanel?.destroy();
+          this.createTrainPanel();
+        });
+      }
     }
   }
 
@@ -635,6 +632,43 @@ export class BattleScene extends Phaser.Scene {
       this.playerUnits.push(unit);
     }
   }
+  
+  private trainArchetype(archetype: AnimalArchetype): void {
+    if (this.playerResources.dna >= archetype.costDNA &&
+        this.playerResources.biomass >= archetype.costBiomass) {
+      this.playerResources.dna -= archetype.costDNA;
+      this.playerResources.biomass -= archetype.costBiomass;
+      this.updateResourceUI();
+      
+      // Create a simple single-archetype "hybrid" for this unit
+      const archetypeHybrid: HybridCreature = {
+        id: `archetype_${archetype.id}_${Date.now()}`,
+        parent1: archetype,
+        parent2: archetype,
+        name: archetype.nameHebrew,
+        hp: archetype.hp,
+        speed: archetype.speed,
+        attack: archetype.attack,
+        range: archetype.range,
+        vision: archetype.vision,
+        specialPrimary: archetype.special,
+        specialSecondary: '',
+        primaryColor: archetype.primaryColor,
+        secondaryColor: archetype.secondaryColor,
+        costDNA: archetype.costDNA,
+        costBiomass: archetype.costBiomass
+      };
+      
+      // Spawn unit near HQ
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 100;
+      const x = this.playerHQ.x + Math.cos(angle) * radius;
+      const y = this.playerHQ.y + Math.sin(angle) * radius;
+      
+      const unit = new Unit(this, x, y, archetypeHybrid, 'player', 'combat');
+      this.playerUnits.push(unit);
+    }
+  }
 
   private onPointerDown(pointer: Phaser.Input.Pointer): void {
     if (this.gameEnded || this.helpOverlay) return;
@@ -911,12 +945,12 @@ export class BattleScene extends Phaser.Scene {
       if (this.playerHQ.currentHp <= 0) {
         this.gameEnded = true;
         this.time.delayedCall(500, () => {
-          this.scene.start('GameOverScene', { victory: false });
+          this.scene.start('GameOverScene', { victory: false, message: strings.lose.baseDown });
         });
       } else if (this.enemyHQ.currentHp <= 0) {
         this.gameEnded = true;
         this.time.delayedCall(500, () => {
-          this.scene.start('GameOverScene', { victory: true });
+          this.scene.start('GameOverScene', { victory: true, message: strings.win.destroyBase });
         });
       }
       // Fallback: army wipeout
