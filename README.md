@@ -91,11 +91,12 @@ The game will open automatically at `http://localhost:3000`
   - Red: <25% HP
 
 **Camera Controls:**
-- **WASD or Arrow Keys**: Pan camera
-- **Mouse Wheel**: Zoom in/out
-- **Mouse at Screen Edge** (2-3% margin): Auto-pan camera (disabled when pointer leaves window)
+- **WASD or Arrow Keys**: Pan camera at 20 world units/second (no acceleration)
+- **Mouse Wheel**: Zoom in/out (0.65× to 1.35×) with ±0.08 steps toward cursor position
+- **Mouse at Screen Edge** (2.5% margin, 12-28px): Auto-pan at same speed as WASD (disabled when pointer leaves window)
 - **Minimap**: Click to jump camera to location
 - **Space**: Center camera on selected units
+- Camera is clamped to map boundaries with 5% margin
 
 **Selection:**
 - **Left-click unit**: Select single unit (clears previous)
@@ -125,13 +126,23 @@ The game will open automatically at `http://localhost:3000`
 
 The battlefield uses a three-state fog of war system:
 - **Unexplored** (black): Areas you haven't discovered yet
-- **Explored** (darkened): Areas you've seen but can't currently see
+- **Explored** (darkened ~45% opacity): Areas you've seen but can't currently see - fog persists so you don't get lost
 - **Visible** (clear): Areas within your units' vision radius
 
 **Vision Mechanics:**
 - Each unit has a vision radius in tiles (scouts have the best vision)
+- Fog refreshes every ~125ms for performance
 - Enemy units are only visible when within your vision range
-- Enemies outside vision are hidden, but can still engage you (ambush potential)
+- Enemies outside vision are completely hidden (vanish when leaving visible areas)
+- Enemies can still engage you from outside your vision (ambush potential)
+- Vision radius is independent from AI aggro radius
+
+**AI Behavior:**
+- Enemy aggro radius ≈ 0.6× their vision range
+- Enemies will chase targets but have a leash distance (~2.7× aggro radius)
+- Enemies return to spawn if pulled too far from their position
+- AI retargets every ~400ms (not every frame) for better performance
+- Vision values determine fog reveal; aggro determines when enemies engage
 - Vision radius is independent from AI aggro radius
 - Units with higher vision values reveal more of the map
 
