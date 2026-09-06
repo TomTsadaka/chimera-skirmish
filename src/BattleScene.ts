@@ -17,6 +17,9 @@ export class BattleScene extends Phaser.Scene {
   private playerHPBar!: Phaser.GameObjects.Graphics;
   private rivalHPBar!: Phaser.GameObjects.Graphics;
   private onboardingShown: boolean = false;
+  private selectedUnitText!: Phaser.GameObjects.Text;
+  private selectedHPText!: Phaser.GameObjects.Text;
+  private selectedHPBar!: Phaser.GameObjects.Graphics;
 
   constructor() {
     super({ key: 'BattleScene' });
@@ -71,9 +74,11 @@ export class BattleScene extends Phaser.Scene {
 
     this.input.mouse!.disableContextMenu();
 
+    this.createSelectedUnitPanel();
+
     if (!this.onboardingShown) {
       this.time.delayedCall(500, () => {
-        this.showOnboardingTip(strings.onboard.battle, 400, 540);
+        this.showOnboardingTip(strings.onboard.battle, 400, 520);
       });
     }
   }
@@ -306,6 +311,7 @@ export class BattleScene extends Phaser.Scene {
     }
 
     this.updateHPBars();
+    this.updateSelectedPanel();
 
     this.ai.update();
 
@@ -351,6 +357,66 @@ export class BattleScene extends Phaser.Scene {
     this.rivalHPBar.fillRect(rivalX, barY, barWidth, barHeight);
     this.rivalHPBar.fillStyle(colors.rival, 1);
     this.rivalHPBar.fillRect(rivalX, barY, barWidth * rivalPercent, barHeight);
+  }
+
+  private createSelectedUnitPanel(): void {
+    this.add.rectangle(400, 570, 700, 50, 0x000000, 0.85);
+    
+    this.selectedUnitText = this.add.text(120, 560, strings.battle.noneSelected, {
+      fontSize: '16px',
+      color: '#aaaaaa',
+      fontFamily: 'Arial'
+    });
+
+    this.selectedHPText = this.add.text(550, 560, '', {
+      fontSize: '16px',
+      color: '#ffffff',
+      fontFamily: 'Arial'
+    });
+
+    this.selectedHPBar = this.add.graphics();
+  }
+
+  private updateSelectedPanel(): void {
+    if (this.selectedUnits.length === 0) {
+      this.selectedUnitText.setText(strings.battle.noneSelected);
+      this.selectedUnitText.setColor('#aaaaaa');
+      this.selectedHPText.setText('');
+      this.selectedHPBar.clear();
+    } else if (this.selectedUnits.length === 1) {
+      const unit = this.selectedUnits[0];
+      this.selectedUnitText.setText(`${strings.battle.selected}: ${unit.creature.name}`);
+      this.selectedUnitText.setColor(colors.playerHex);
+      
+      const hpPercent = unit.currentHp / unit.creature.hp;
+      this.selectedHPText.setText(`${strings.stat.hp}: ${unit.currentHp}/${unit.creature.hp}`);
+      
+      this.selectedHPBar.clear();
+      const barWidth = 150;
+      const barHeight = 8;
+      const barX = 550;
+      const barY = 572;
+      
+      this.selectedHPBar.fillStyle(0x000000, 0.5);
+      this.selectedHPBar.fillRect(barX, barY, barWidth, barHeight);
+      
+      let color: number;
+      if (hpPercent > 0.5) {
+        color = 0x00ff00;
+      } else if (hpPercent > 0.25) {
+        color = 0xffff00;
+      } else {
+        color = 0xff0000;
+      }
+      
+      this.selectedHPBar.fillStyle(color, 1);
+      this.selectedHPBar.fillRect(barX, barY, barWidth * hpPercent, barHeight);
+    } else {
+      this.selectedUnitText.setText(`${strings.battle.selected}: ${this.selectedUnits.length} יחידות`);
+      this.selectedUnitText.setColor(colors.playerHex);
+      this.selectedHPText.setText('');
+      this.selectedHPBar.clear();
+    }
   }
 
   private showOnboardingTip(text: string, x: number, y: number): void {
