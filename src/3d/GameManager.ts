@@ -640,34 +640,61 @@ export class GameManager {
 
   private updateCombat(_delta: number): void {
     for (const unit of [...this.playerUnits, ...this.enemyUnits]) {
+      // Skip workers - they don't attack
+      if (unit.role !== 'combat') continue;
+      
       // Retarget if target is dead
       if (unit.targetEnemy && unit.targetEnemy.currentHp <= 0) {
-        const nearest = unit.findNearestEnemy(unit.team === 'player' ? this.enemyUnits : this.playerUnits);
+        const enemies = unit.team === 'player' ? this.enemyUnits : this.playerUnits;
+        const nearest = unit.findNearestEnemy(enemies.filter(u => u.role === 'combat'));
         unit.targetEnemy = nearest;
         if (nearest) {
           unit.moveToPosition(nearest.getPosition().x, nearest.getPosition().z);
         }
       }
       
-      // Attack enemy HQ if no target
-      if (unit.role === 'combat' && unit.targetEnemy === null) {
-        const enemyHQ = unit.team === 'player' ? this.enemyHQ : this.playerHQ;
-        const distanceToHQ = unit.getPosition().distanceTo(enemyHQ.getPosition());
-        
-        if (distanceToHQ <= unit.creature.range * 5) {
-          if (unit.attackCooldown === 0) {
-            enemyHQ.takeDamage(unit.creature.attack);
-            unit.attackCooldown = 1000;
-          }
-        }
-      }
-      
-      // Attack target if in range
+      // Chase target if it has moved
       if (unit.targetEnemy) {
         const distance = unit.getPosition().distanceTo(unit.targetEnemy.getPosition());
         const effectiveRange = unit.creature.range * 3;
+        
+        // Chase if target moved out of range
+        if (distance > effectiveRange) {
+          unit.moveToPosition(unit.targetEnemy.getPosition().x, unit.targetEnemy.getPosition().z);
+        }
+        
+        // Attack if in range
         if (distance <= effectiveRange) {
           unit.attackTarget(unit.targetEnemy);
+        }
+      } else {
+        // Auto-acquire: attack nearby enemies
+        const enemies = unit.team === 'player' ? this.enemyUnits : this.playerUnits;
+        const nearestEnemy = unit.findNearestEnemy(enemies.filter(u => u.role === 'combat'));
+        
+        if (nearestEnemy) {
+          const distance = unit.getPosition().distanceTo(nearestEnemy.getPosition());
+          const aggroRange = 20; // Auto-acquire range
+          
+          if (distance <= aggroRange) {
+            unit.targetEnemy = nearestEnemy;
+            unit.moveToPosition(nearestEnemy.getPosition().x, nearestEnemy.getPosition().z);
+          }
+        }
+        
+        // If still no target, attack enemy HQ if close
+        if (!unit.targetEnemy) {
+          const enemyHQ = unit.team === 'player' ? this.enemyHQ : this.playerHQ;
+          const distanceToHQ = unit.getPosition().distanceTo(enemyHQ.getPosition());
+          
+          if (distanceToHQ <= unit.creature.range * 5) {
+            if (unit.attackCooldown === 0) {
+              const damage = unit.creature.attack;
+              enemyHQ.takeDamage(damage);
+              console.log(`[Combat] ${unit.team} unit attacking ${enemyHQ === this.playerHQ ? 'player' : 'enemy'} HQ for ${damage} damage. HQ HP: ${enemyHQ.currentHp}/${enemyHQ.maxHp}`);
+              unit.attackCooldown = 1000;
+            }
+          }
         }
       }
     }

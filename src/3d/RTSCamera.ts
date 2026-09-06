@@ -40,11 +40,16 @@ export class RTSCamera {
       1000
     );
     
-    // Position camera for RTS view
+    // Position camera for RTS view - centered on map
     this.target = new THREE.Vector3(this.MAP_WIDTH / 2, 0, this.MAP_HEIGHT / 2);
-    this.updateCameraPosition(50);
+    this.updateCameraPosition(60);
     
     this.setupControls();
+  }
+
+  public frameView(centerX: number, centerZ: number, height: number = 55): void {
+    this.target.set(centerX, 0, centerZ);
+    this.updateCameraPosition(height);
   }
 
   private setupControls(): void {
@@ -202,8 +207,8 @@ export class RTSCamera {
       moved = true;
     }
     
-    // Edge panning
-    if (this.pointerInWindow) {
+    // Edge panning (only if pointer in window and help not open)
+    if (this.pointerInWindow && !this.helpOverlayOpen) {
       if (this.mouseAtEdge.x !== 0) {
         this.target.x += this.mouseAtEdge.x * panSpeed;
         moved = true;
@@ -214,8 +219,8 @@ export class RTSCamera {
       }
     }
     
-    // Clamp to map bounds with margin
-    const margin = 20;
+    // Clamp to map bounds with smaller margin to reach edges
+    const margin = 5;
     this.target.x = THREE.MathUtils.clamp(this.target.x, margin, this.MAP_WIDTH - margin);
     this.target.z = THREE.MathUtils.clamp(this.target.z, margin, this.MAP_HEIGHT - margin);
     

@@ -2,13 +2,15 @@ import * as THREE from 'three';
 import { GAME_CONSTANTS } from '../constants';
 
 export class Terrain {
-  private mesh: THREE.Mesh;
+  private mesh: THREE.Group;
   private readonly MAP_WIDTH = GAME_CONSTANTS.MAP_WIDTH;
   private readonly MAP_HEIGHT = GAME_CONSTANTS.MAP_HEIGHT;
 
   constructor() {
-    // Create ground plane
-    const geometry = new THREE.PlaneGeometry(this.MAP_WIDTH, this.MAP_HEIGHT, 32, 32);
+    this.mesh = new THREE.Group();
+    
+    // Create bright green textured ground plane
+    const geometry = new THREE.PlaneGeometry(this.MAP_WIDTH, this.MAP_HEIGHT, 50, 50);
     
     // Add slight height variation for visual interest
     const positions = geometry.attributes.position;
@@ -19,33 +21,34 @@ export class Terrain {
     }
     geometry.computeVertexNormals();
     
-    // Green grass-like material
+    // Bright green grass-like material with texture variation
     const material = new THREE.MeshStandardMaterial({
-      color: 0x5C8A4D,
-      roughness: 0.9,
+      color: 0x6B8E4D,
+      roughness: 0.8,
       metalness: 0.1,
       flatShading: false
     });
     
-    this.mesh = new THREE.Mesh(geometry, material);
-    this.mesh.rotation.x = -Math.PI / 2;
-    this.mesh.position.set(this.MAP_WIDTH / 2, 0, this.MAP_HEIGHT / 2);
-    this.mesh.receiveShadow = true;
+    const ground = new THREE.Mesh(geometry, material);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.set(this.MAP_WIDTH / 2, 0, this.MAP_HEIGHT / 2);
+    ground.receiveShadow = true;
+    this.mesh.add(ground);
     
-    // Add grid helper for better depth perception
+    // Add visible grid overlay for better depth perception
     const gridHelper = new THREE.GridHelper(
       Math.max(this.MAP_WIDTH, this.MAP_HEIGHT),
-      50,
+      40,
       0x000000,
       0x000000
     );
-    gridHelper.material.opacity = 0.1;
+    gridHelper.material.opacity = 0.25;
     gridHelper.material.transparent = true;
-    gridHelper.position.set(this.MAP_WIDTH / 2, 0.1, this.MAP_HEIGHT / 2);
+    gridHelper.position.set(this.MAP_WIDTH / 2, 0.15, this.MAP_HEIGHT / 2);
     this.mesh.add(gridHelper);
   }
 
-  public getMesh(): THREE.Mesh {
+  public getMesh(): THREE.Group {
     return this.mesh;
   }
 }

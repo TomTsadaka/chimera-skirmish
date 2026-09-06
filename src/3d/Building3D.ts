@@ -37,53 +37,82 @@ export class Building3D {
     const teamColor = this.team === 'player' ? 0x2DD4BF : 0xF97316;
     
     if (this.buildingType === 'HQ') {
-      // Main building body
-      const baseGeometry = new THREE.BoxGeometry(8, 6, 8);
+      // Tall tower base
+      const baseGeometry = new THREE.CylinderGeometry(6, 7, 15, 8);
       const baseMaterial = new THREE.MeshStandardMaterial({
         color: teamColor,
-        roughness: 0.7,
-        metalness: 0.3
+        roughness: 0.6,
+        metalness: 0.4,
+        emissive: teamColor,
+        emissiveIntensity: 0.2
       });
       const base = new THREE.Mesh(baseGeometry, baseMaterial);
-      base.position.y = 3;
+      base.position.y = 7.5;
       base.castShadow = true;
       base.receiveShadow = true;
       this.mesh.add(base);
       
-      // Roof/top
-      const roofGeometry = new THREE.ConeGeometry(6, 3, 4);
-      const roofMaterial = new THREE.MeshStandardMaterial({
-        color: teamColor,
-        roughness: 0.6,
-        metalness: 0.4
-      });
-      const roof = new THREE.Mesh(roofGeometry, roofMaterial);
-      roof.position.y = 7.5;
-      roof.rotation.y = Math.PI / 4;
-      roof.castShadow = true;
-      this.mesh.add(roof);
+      // Middle section
+      const midGeometry = new THREE.CylinderGeometry(5, 6, 8, 8);
+      const mid = new THREE.Mesh(midGeometry, baseMaterial);
+      mid.position.y = 19;
+      mid.castShadow = true;
+      this.mesh.add(mid);
       
-      // Team emblem/detail
-      const emblemGeometry = new THREE.CylinderGeometry(0.5, 0.5, 8);
-      const emblemMaterial = new THREE.MeshStandardMaterial({
+      // Top section with roof
+      const topGeometry = new THREE.ConeGeometry(6, 6, 8);
+      const topMaterial = new THREE.MeshStandardMaterial({
+        color: teamColor,
+        roughness: 0.5,
+        metalness: 0.6,
+        emissive: teamColor,
+        emissiveIntensity: 0.3
+      });
+      const top = new THREE.Mesh(topGeometry, topMaterial);
+      top.position.y = 26;
+      top.castShadow = true;
+      this.mesh.add(top);
+      
+      // Glowing beacon on top
+      const beaconGeometry = new THREE.SphereGeometry(1, 16, 16);
+      const beaconMaterial = new THREE.MeshStandardMaterial({
         color: 0xFFD700,
         emissive: 0xFFD700,
-        emissiveIntensity: 0.3,
-        metalness: 0.8
+        emissiveIntensity: 0.8,
+        metalness: 0.9
       });
-      const emblem = new THREE.Mesh(emblemGeometry, emblemMaterial);
-      emblem.position.set(0, 9, 0);
-      this.mesh.add(emblem);
+      const beacon = new THREE.Mesh(beaconGeometry, beaconMaterial);
+      beacon.position.y = 29;
+      this.mesh.add(beacon);
+      
+      // Windows/details
+      for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        const windowGeom = new THREE.BoxGeometry(0.8, 1.5, 0.3);
+        const windowMat = new THREE.MeshStandardMaterial({
+          color: 0xFFFFAA,
+          emissive: 0xFFFFAA,
+          emissiveIntensity: 0.5
+        });
+        const window = new THREE.Mesh(windowGeom, windowMat);
+        window.position.set(
+          Math.cos(angle) * 6.5,
+          10 + (i % 3) * 3,
+          Math.sin(angle) * 6.5
+        );
+        window.lookAt(0, window.position.y, 0);
+        this.mesh.add(window);
+      }
     }
     
-    // Base platform
-    const platformGeometry = new THREE.CylinderGeometry(10, 11, 0.5, 16);
+    // Large base platform
+    const platformGeometry = new THREE.CylinderGeometry(10, 12, 1, 16);
     const platformMaterial = new THREE.MeshStandardMaterial({
       color: 0x444444,
       roughness: 0.9
     });
     const platform = new THREE.Mesh(platformGeometry, platformMaterial);
-    platform.position.y = 0.25;
+    platform.position.y = 0.5;
     platform.receiveShadow = true;
     this.mesh.add(platform);
   }
@@ -92,14 +121,14 @@ export class Building3D {
     this.hpBarContainer.clear();
     
     const hpPercent = this.currentHp / this.maxHp;
-    const barWidth = 10;
-    const barHeight = 0.5;
+    const barWidth = 12;
+    const barHeight = 0.6;
     
     // Background
     const bgGeometry = new THREE.PlaneGeometry(barWidth, barHeight);
-    const bgMaterial = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.5 });
+    const bgMaterial = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.7 });
     const bg = new THREE.Mesh(bgGeometry, bgMaterial);
-    bg.position.y = 12;
+    bg.position.y = 32;
     this.hpBarContainer.add(bg);
     
     // HP bar
@@ -115,7 +144,7 @@ export class Building3D {
     const hpGeometry = new THREE.PlaneGeometry(barWidth * hpPercent, barHeight);
     const hpMaterial = new THREE.MeshBasicMaterial({ color });
     const hpBar = new THREE.Mesh(hpGeometry, hpMaterial);
-    hpBar.position.set(-(barWidth * (1 - hpPercent)) / 2, 12, 0.01);
+    hpBar.position.set(-(barWidth * (1 - hpPercent)) / 2, 32, 0.01);
     this.hpBarContainer.add(hpBar);
   }
 

@@ -66,74 +66,131 @@ export class Unit3D {
 
   private createUnitMesh(): void {
     const size = this.role === 'worker' ? 1.5 : 2;
+    const teamColor = this.team === 'player' ? 0x2DD4BF : 0xF97316;
     
     if (this.role === 'worker') {
-      // Worker: simple box with tool
-      const bodyGeometry = new THREE.BoxGeometry(size, size * 0.8, size);
-      const bodyMaterial = new THREE.MeshStandardMaterial({
+      // Worker: clear head/body/legs structure
+      
+      // Legs (two cylinders)
+      const legGeometry = new THREE.CylinderGeometry(0.3, 0.25, 1, 8);
+      const legMaterial = new THREE.MeshStandardMaterial({
         color: 0xFACC15,
         roughness: 0.7,
         metalness: 0.2
       });
-      const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-      body.castShadow = true;
-      body.position.y = size * 0.4;
-      this.mesh.add(body);
+      const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
+      leftLeg.position.set(-0.4, 0.5, 0);
+      leftLeg.castShadow = true;
+      this.mesh.add(leftLeg);
       
-      // Tool (simple stick)
-      const toolGeometry = new THREE.CylinderGeometry(0.1, 0.1, size * 1.2);
-      const toolMaterial = new THREE.MeshStandardMaterial({ color: 0x854D0E });
-      const tool = new THREE.Mesh(toolGeometry, toolMaterial);
-      tool.rotation.z = Math.PI / 4;
-      tool.position.set(size * 0.4, size * 0.5, 0);
-      this.mesh.add(tool);
-    } else {
-      // Combat unit: procedural creature from two parts
-      // Main body (sphere)
-      const bodyGeometry = new THREE.SphereGeometry(size * 0.6, 16, 16);
-      const primaryColor = parseInt(this.creature.primaryColor.replace('#', '0x'));
-      const bodyMaterial = new THREE.MeshStandardMaterial({
-        color: primaryColor,
-        roughness: 0.6,
-        metalness: 0.1
-      });
-      const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-      body.castShadow = true;
-      body.position.y = size * 0.6;
-      this.mesh.add(body);
+      const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
+      rightLeg.position.set(0.4, 0.5, 0);
+      rightLeg.castShadow = true;
+      this.mesh.add(rightLeg);
       
-      // Secondary parts (represent hybrid nature)
-      const secondaryColor = parseInt(this.creature.secondaryColor.replace('#', '0x'));
-      const partMaterial = new THREE.MeshStandardMaterial({
-        color: secondaryColor,
-        roughness: 0.6,
-        metalness: 0.1
-      });
+      // Torso (box)
+      const torsoGeometry = new THREE.BoxGeometry(size, size * 0.8, size * 0.6);
+      const torso = new THREE.Mesh(torsoGeometry, legMaterial);
+      torso.position.y = 1.6;
+      torso.castShadow = true;
+      torso.receiveShadow = true;
+      this.mesh.add(torso);
       
-      // Head/crest
-      const headGeometry = new THREE.ConeGeometry(size * 0.3, size * 0.5, 8);
-      const head = new THREE.Mesh(headGeometry, partMaterial);
-      head.position.set(0, size * 1.2, size * 0.3);
-      head.rotation.x = Math.PI / 6;
+      // Head (sphere)
+      const headGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+      const head = new THREE.Mesh(headGeometry, legMaterial);
+      head.position.y = 2.5;
       head.castShadow = true;
       this.mesh.add(head);
       
-      // Limbs/appendages
-      const limbGeometry = new THREE.BoxGeometry(size * 0.2, size * 0.4, size * 0.2);
-      const limb1 = new THREE.Mesh(limbGeometry, partMaterial);
-      limb1.position.set(-size * 0.4, size * 0.3, size * 0.2);
-      limb1.castShadow = true;
-      this.mesh.add(limb1);
+      // Tool (pickaxe)
+      const handleGeometry = new THREE.CylinderGeometry(0.1, 0.1, size * 1.2);
+      const toolMaterial = new THREE.MeshStandardMaterial({ color: 0x854D0E });
+      const handle = new THREE.Mesh(handleGeometry, toolMaterial);
+      handle.rotation.z = Math.PI / 4;
+      handle.position.set(size * 0.5, 1.5, 0);
+      handle.castShadow = true;
+      this.mesh.add(handle);
       
-      const limb2 = new THREE.Mesh(limbGeometry, partMaterial);
-      limb2.position.set(size * 0.4, size * 0.3, size * 0.2);
-      limb2.castShadow = true;
-      this.mesh.add(limb2);
+      const pickGeometry = new THREE.BoxGeometry(0.8, 0.2, 0.2);
+      const pick = new THREE.Mesh(pickGeometry, toolMaterial);
+      pick.position.set(size * 0.9, 2.2, 0);
+      pick.castShadow = true;
+      this.mesh.add(pick);
+    } else {
+      // Combat unit: clear multi-part creature (head/torso/legs)
+      const primaryColor = parseInt(this.creature.primaryColor.replace('#', '0x'));
+      const secondaryColor = parseInt(this.creature.secondaryColor.replace('#', '0x'));
+      
+      // Legs (primary color, sturdy)
+      const legGeometry = new THREE.CylinderGeometry(0.4, 0.35, 1.2, 8);
+      const legMaterial = new THREE.MeshStandardMaterial({
+        color: primaryColor,
+        roughness: 0.6,
+        metalness: 0.2
+      });
+      const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
+      leftLeg.position.set(-0.5, 0.6, 0);
+      leftLeg.castShadow = true;
+      this.mesh.add(leftLeg);
+      
+      const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
+      rightLeg.position.set(0.5, 0.6, 0);
+      rightLeg.castShadow = true;
+      this.mesh.add(rightLeg);
+      
+      // Torso (primary color, larger)
+      const torsoGeometry = new THREE.SphereGeometry(size * 0.7, 16, 16);
+      const torso = new THREE.Mesh(torsoGeometry, legMaterial);
+      torso.position.y = 2;
+      torso.scale.y = 1.2;
+      torso.castShadow = true;
+      torso.receiveShadow = true;
+      this.mesh.add(torso);
+      
+      // Head (secondary color, hybrid trait)
+      const headGeometry = new THREE.ConeGeometry(size * 0.5, size * 0.8, 8);
+      const headMaterial = new THREE.MeshStandardMaterial({
+        color: secondaryColor,
+        roughness: 0.6,
+        metalness: 0.3
+      });
+      const head = new THREE.Mesh(headGeometry, headMaterial);
+      head.position.y = 3.2;
+      head.castShadow = true;
+      this.mesh.add(head);
+      
+      // Arms/claws (secondary color, hybrid trait)
+      const armGeometry = new THREE.BoxGeometry(0.3, 1.2, 0.3);
+      const leftArm = new THREE.Mesh(armGeometry, headMaterial);
+      leftArm.position.set(-size * 0.6, 2, size * 0.3);
+      leftArm.rotation.z = Math.PI / 6;
+      leftArm.castShadow = true;
+      this.mesh.add(leftArm);
+      
+      const rightArm = new THREE.Mesh(armGeometry, headMaterial);
+      rightArm.position.set(size * 0.6, 2, size * 0.3);
+      rightArm.rotation.z = -Math.PI / 6;
+      rightArm.castShadow = true;
+      this.mesh.add(rightArm);
+      
+      // Claws (secondary color)
+      const clawGeometry = new THREE.ConeGeometry(0.2, 0.5, 4);
+      const leftClaw = new THREE.Mesh(clawGeometry, headMaterial);
+      leftClaw.position.set(-size * 0.7, 1.2, size * 0.5);
+      leftClaw.rotation.x = Math.PI;
+      leftClaw.castShadow = true;
+      this.mesh.add(leftClaw);
+      
+      const rightClaw = new THREE.Mesh(clawGeometry, headMaterial);
+      rightClaw.position.set(size * 0.7, 1.2, size * 0.5);
+      rightClaw.rotation.x = Math.PI;
+      rightClaw.castShadow = true;
+      this.mesh.add(rightClaw);
     }
     
     // Team indicator (ring around base)
-    const ringGeometry = new THREE.TorusGeometry(size * 0.8, 0.1, 8, 16);
-    const teamColor = this.team === 'player' ? 0x2DD4BF : 0xF97316;
+    const ringGeometry = new THREE.TorusGeometry(size * 0.8, 0.12, 8, 16);
     const ringMaterial = new THREE.MeshStandardMaterial({
       color: teamColor,
       emissive: teamColor,

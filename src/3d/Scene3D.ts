@@ -25,12 +25,18 @@ export class Scene3D {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    this.renderer.setClearColor(0x87CEEB); // Sky blue
-    container.appendChild(this.renderer.domElement);
+    this.renderer.setClearColor(0xB0E0FF); // Bright sky blue
+    
+    // Ensure canvas is properly sized
+    const canvas = this.renderer.domElement;
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.display = 'block';
+    container.appendChild(canvas);
 
     // Initialize scene
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.Fog(0x87CEEB, 100, 500);
+    this.scene.fog = new THREE.Fog(0xD0D0D0, 100, 400); // Light gray fog
 
     // Initialize camera
     this.camera = new RTSCamera(this.renderer.domElement);
@@ -59,12 +65,12 @@ export class Scene3D {
   }
 
   private setupLighting(): void {
-    // Ambient light for base illumination
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    // Bright ambient light
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     this.scene.add(ambientLight);
 
-    // Directional light (sun) with shadows
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    // Strong directional light (sun) with shadows
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
     directionalLight.position.set(50, 100, 50);
     directionalLight.castShadow = true;
     
@@ -81,8 +87,8 @@ export class Scene3D {
     
     this.scene.add(directionalLight);
 
-    // Hemisphere light for softer outdoor look
-    const hemisphereLight = new THREE.HemisphereLight(0x87CEEB, 0x5C8A4D, 0.3);
+    // Strong hemisphere light for bright outdoor look
+    const hemisphereLight = new THREE.HemisphereLight(0xB0E0FF, 0x6B8E4D, 0.5);
     this.scene.add(hemisphereLight);
   }
 

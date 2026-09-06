@@ -23,45 +23,59 @@ export class ResourceNode3D {
 
   private createNodeMesh(): void {
     if (this.data.type === 'biomass') {
-      // Hexagonal crystal formation for biomass
-      const hexGeometry = new THREE.CylinderGeometry(2, 2, 3, 6);
-      const hexMaterial = new THREE.MeshStandardMaterial({
-        color: 0x22C55E,
-        emissive: 0x22C55E,
-        emissiveIntensity: 0.3,
-        roughness: 0.4,
-        metalness: 0.6
-      });
-      const hex = new THREE.Mesh(hexGeometry, hexMaterial);
-      hex.position.y = 1.5;
-      hex.castShadow = true;
-      this.mesh.add(hex);
+      // Create glowing crystal cluster
       
-      // Add smaller crystals around it
-      for (let i = 0; i < 6; i++) {
-        const angle = (i / 6) * Math.PI * 2;
-        const smallHex = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.6, 0.6, 1.5, 6),
-          hexMaterial
-        );
-        smallHex.position.set(
-          Math.cos(angle) * 2,
-          0.75,
-          Math.sin(angle) * 2
-        );
-        smallHex.castShadow = true;
-        this.mesh.add(smallHex);
-      }
+      // Central large crystal (cone pointing up)
+      const mainCrystalGeometry = new THREE.ConeGeometry(1.5, 5, 6);
+      const crystalMaterial = new THREE.MeshStandardMaterial({
+        color: 0x00FFAA,
+        emissive: 0x00FFAA,
+        emissiveIntensity: 0.6,
+        roughness: 0.2,
+        metalness: 0.8,
+        transparent: true,
+        opacity: 0.9
+      });
+      const mainCrystal = new THREE.Mesh(mainCrystalGeometry, crystalMaterial);
+      mainCrystal.position.y = 2.5;
+      mainCrystal.castShadow = true;
+      this.mesh.add(mainCrystal);
+      
+      // Add smaller surrounding crystals at different angles
+      const smallPositions = [
+        { x: 1.5, y: 1.2, z: 0, scale: 0.6, rotZ: 0.3 },
+        { x: -1.2, y: 1.5, z: 0.5, scale: 0.7, rotZ: -0.2 },
+        { x: 0, y: 1, z: 1.5, scale: 0.5, rotZ: 0.4 },
+        { x: -0.8, y: 1.3, z: -1.2, scale: 0.6, rotZ: -0.3 }
+      ];
+      
+      smallPositions.forEach(pos => {
+        const smallCrystalGeometry = new THREE.ConeGeometry(0.8, 3, 6);
+        const smallCrystal = new THREE.Mesh(smallCrystalGeometry, crystalMaterial);
+        smallCrystal.position.set(pos.x, pos.y, pos.z);
+        smallCrystal.scale.setScalar(pos.scale);
+        smallCrystal.rotation.z = pos.rotZ;
+        smallCrystal.castShadow = true;
+        this.mesh.add(smallCrystal);
+      });
+      
+      // Add a subtle point light for glow effect
+      const light = new THREE.PointLight(0x00FFAA, 0.8, 10);
+      light.position.y = 3;
+      this.mesh.add(light);
     }
     
-    // Base platform
-    const platformGeometry = new THREE.CylinderGeometry(3.5, 4, 0.3, 16);
+    // Base platform with glowing edge
+    const platformGeometry = new THREE.CylinderGeometry(2.5, 3, 0.5, 16);
     const platformMaterial = new THREE.MeshStandardMaterial({
-      color: 0x3a3a3a,
-      roughness: 0.8
+      color: 0x00AA88,
+      emissive: 0x00AA88,
+      emissiveIntensity: 0.3,
+      roughness: 0.7,
+      metalness: 0.5
     });
     const platform = new THREE.Mesh(platformGeometry, platformMaterial);
-    platform.position.y = 0.15;
+    platform.position.y = 0.25;
     platform.receiveShadow = true;
     this.mesh.add(platform);
   }
