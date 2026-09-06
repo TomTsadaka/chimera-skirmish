@@ -1,5 +1,8 @@
 import Phaser from 'phaser';
-import { HybridCreature } from './types';
+import { HybridCreature, UnitRole } from './types';
+import { ResourceNode } from './ResourceNode';
+import { Building } from './Building';
+import { GAME_CONSTANTS } from './constants';
 
 export class Unit extends Phaser.GameObjects.Container {
   public creature: HybridCreature;
@@ -7,11 +10,19 @@ export class Unit extends Phaser.GameObjects.Container {
   public team: 'player' | 'enemy';
   public isSelected: boolean = false;
   public targetEnemy: Unit | null = null;
+  public role: UnitRole = 'combat';
+  
+  // Worker-specific properties
+  public targetResourceNode: ResourceNode | null = null;
+  public homeBuilding: Building | null = null;
+  public carryingResource: { type: 'biomass' | 'energy'; amount: number } | null = null;
+  public gatherState: 'idle' | 'moving_to_resource' | 'gathering' | 'returning' | 'moving_to_dropoff' = 'idle';
+  private gatherTimer: number = 0;
   
   private bodyGraphics: Phaser.GameObjects.Graphics;
   private hpBar: Phaser.GameObjects.Graphics;
   private selectionCircle: Phaser.GameObjects.Arc;
-  private attackCooldown: number = 0;
+  public attackCooldown: number = 0;
   private readonly ATTACK_COOLDOWN_MS = 1000;
 
   constructor(
@@ -19,13 +30,17 @@ export class Unit extends Phaser.GameObjects.Container {
     x: number,
     y: number,
     creature: HybridCreature,
-    team: 'player' | 'enemy'
+    team: 'player' | 'enemy',
+    role: UnitRole = 'combat',
+    homeBuilding: Building | null = null
   ) {
     super(scene, x, y);
     
     this.creature = creature;
     this.currentHp = creature.hp;
     this.team = team;
+    this.role = role;
+    this.homeBuilding = homeBuilding;
 
     this.selectionCircle = new Phaser.GameObjects.Arc(scene, 0, 0, 25, 0, 360, false, 0x00ff00, 0);
     this.add(this.selectionCircle);
@@ -44,13 +59,29 @@ export class Unit extends Phaser.GameObjects.Container {
   private drawBody(): void {
     this.bodyGraphics.clear();
     
-    const size = 20;
-    this.bodyGraphics.fillStyle(parseInt(this.creature.primaryColor.replace('#', '0x')), 1);
-    this.bodyGraphics.fillCircle(0, 0, size);
+    const size = this.role === 'worker' ? 15 : 20;
     
-    this.bodyGraphics.fillStyle(parseInt(this.creature.secondaryColor.replace('#', '0x')), 1);
-    this.bodyGraphics.fillCircle(-8, -8, size * 0.4);
-    this.bodyGraphics.fillCircle(8, 8, size * 0.4);
+    if (this.role === 'worker') {
+      // Worker visual: smaller, yellowish
+      this.bodyGraphics.fillStyle(0xFACC15, 1);
+      this.bodyGraphics.fillCircle(0, 0, size);
+      
+      this.bodyGraphics.fillStyle(0x854D0E, 1);
+      this.bodyGraphics.fillCircle(-5, -5, size * 0.3);
+      this.bodyGraphics.fillCircle(5, 5, size * 0.3);
+      
+      // Tool icon
+      this.bodyGraphics.lineStyle(2, 0x000000, 0.8);
+      this.bodyGraphics.lineBetween(-8, 0, 8, 0);
+    } else {
+      // Combat unit visual
+      this.bodyGraphics.fillStyle(parseInt(this.creature.primaryColor.replace('#', '0x')), 1);
+      this.bodyGraphics.fillCircle(0, 0, size);
+      
+      this.bodyGraphics.fillStyle(parseInt(this.creature.secondaryColor.replace('#', '0x')), 1);
+      this.bodyGraphics.fillCircle(-8, -8, size * 0.4);
+      this.bodyGraphics.fillCircle(8, 8, size * 0.4);
+    }
 
     if (this.team === 'enemy') {
       this.bodyGraphics.lineStyle(2, 0xff0000, 1);
@@ -102,7 +133,8 @@ export class Unit extends Phaser.GameObjects.Container {
 
   moveToPosition(targetX: number, targetY: number): void {
     const distance = Phaser.Math.Distance.Between(this.x, this.y, targetX, targetY);
-    const duration = (distance / (this.creature.speed * 10)) * 1000;
+    const speed = this.role === 'worker' ? this.creature.speed * GAME_CONSTANTS.WORKER_SPEED : this.creature.speed;
+    const duration = (distance / (speed * 10)) * 1000;
     
     this.scene.tweens.add({
       targets: this,
@@ -148,6 +180,89 @@ export class Unit extends Phaser.GameObjects.Container {
     if (this.attackCooldown > 0) {
       this.attackCooldown = Math.max(0, this.attackCooldown - delta);
     }
+    
+    // Worker gathering logic
+    if (this.role === 'worker' && this.gatherState !== 'idle') {
+      this.updateGatherBehavior(delta);
+    }
+  }
+  
+  private updateGatherBehavior(delta: number): void {
+    if (!this.targetResourceNode || !this.homeBuilding) {
+      this.gatherState = 'idle';
+      return;
+    }
+    
+    const distanceToNode = Phaser.Math.Distance.Between(
+      this.x, this.y,
+      this.targetResourceNode.x, this.targetResourceNode.y
+    );
+    
+    const distanceToHome = Phaser.Math.Distance.Between(
+      this.x, this.y,
+      this.homeBuilding.x, this.homeBuilding.y
+    );
+    
+    switch (this.gatherState) {
+      case 'moving_to_resource':
+        if (distanceToNode < 30) {
+          this.gatherState = 'gathering';
+          this.gatherTimer = 0;
+        }
+        break;
+        
+      case 'gathering':
+        this.gatherTimer += delta;
+        if (this.gatherTimer >= GAME_CONSTANTS.WORKER_GATHER_INTERVAL) {
+          if (!this.targetResourceNode.isEmpty()) {
+            const gathered = this.targetResourceNode.gather(GAME_CONSTANTS.WORKER_GATHER_RATE);
+            this.carryingResource = {
+              type: this.targetResourceNode.nodeData.type,
+              amount: gathered
+            };
+            this.gatherState = 'returning';
+            this.moveToPosition(this.homeBuilding.x, this.homeBuilding.y);
+          } else {
+            // Node is empty, go idle
+            this.gatherState = 'idle';
+            this.targetResourceNode = null;
+          }
+        }
+        break;
+        
+      case 'returning':
+      case 'moving_to_dropoff':
+        if (distanceToHome < 50) {
+          // Drop off resources
+          if (this.carryingResource) {
+            this.scene.events.emit('resource-gathered', {
+              team: this.team,
+              type: this.carryingResource.type,
+              amount: this.carryingResource.amount
+            });
+            this.carryingResource = null;
+          }
+          
+          // Go back to resource node if it still has resources
+          if (this.targetResourceNode && !this.targetResourceNode.isEmpty()) {
+            this.gatherState = 'moving_to_resource';
+            this.moveToPosition(this.targetResourceNode.x, this.targetResourceNode.y);
+          } else {
+            this.gatherState = 'idle';
+            this.targetResourceNode = null;
+          }
+        }
+        break;
+    }
+  }
+  
+  public orderGather(resourceNode: ResourceNode): void {
+    if (this.role !== 'worker' || !this.homeBuilding) return;
+    
+    this.targetResourceNode = resourceNode;
+    this.gatherState = 'moving_to_resource';
+    this.targetEnemy = null;
+    this.moveToPosition(resourceNode.x, resourceNode.y);
   }
 
   findNearestEnemy(enemies: Unit[]): Unit | null {

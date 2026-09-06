@@ -35,3 +35,27 @@ export interface ArmySlot {
 }
 
 export type GamePhase = 'forge' | 'army' | 'battle' | 'gameover';
+
+// Economy System Types
+export interface ResourceType {
+  id: 'biomass' | 'energy';
+  name: string;
+  nameHebrew: string;
+  color: number;
+}
+
+export interface ResourceNode {
+  id: string;
+  type: 'biomass' | 'energy';
+  x: number;
+  y: number;
+  amount: number;
+  maxAmount: number;
+}
+
+export interface EconomyState {
+  biomass: number;
+  energy: number;
+}
+
+export type UnitRole = 'worker' | 'combat';

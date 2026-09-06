@@ -87,6 +87,23 @@ export const strings = {
     otherEsc: 'Esc - בטל בחירה',
     otherHelp: 'F1 / ? - עזרה',
     close: 'סגור'
+  },
+  economy: {
+    biomass: 'ביומסה',
+    biomassEn: 'Biomass',
+    energy: 'אנרגיה',
+    energyEn: 'Energy',
+    resources: 'משאבים',
+    trainWorker: 'אמן עובד',
+    trainUnit: 'אמן לוחם',
+    worker: 'עובד',
+    gathering: 'אוסף',
+    returning: 'חוזר',
+    hq: 'מטה ראשי',
+    hqDestroyed: 'המטה הושמד!',
+    notEnoughResources: 'אין מספיק משאבים',
+    workerInfo: 'עובד - אוסף משאבים',
+    unitInfo: 'לוחם - יחידת קרב'
   }
 };
 

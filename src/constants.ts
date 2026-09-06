@@ -38,6 +38,26 @@ export const GAME_CONSTANTS = {
   
   // Unit constants
   UNIT_SIZE: 30, // base size for units
+  
+  // Economy constants
+  STARTING_BIOMASS: 200,
+  STARTING_ENERGY: 150,
+  STARTING_WORKERS: 4,
+  
+  WORKER_COST_BIOMASS: 50,
+  WORKER_COST_ENERGY: 0,
+  COMBAT_UNIT_COST_BIOMASS: 75,
+  COMBAT_UNIT_COST_ENERGY: 50,
+  
+  WORKER_GATHER_RATE: 10, // resources per trip
+  WORKER_GATHER_INTERVAL: 3000, // milliseconds per trip
+  WORKER_SPEED: 1.5, // movement speed multiplier
+  
+  RESOURCE_NODE_BIOMASS_AMOUNT: 1500,
+  RESOURCE_NODE_ENERGY_AMOUNT: 1200,
+  
+  HQ_HP: 500,
+  HQ_SIZE: 60,
 } as const;
 
 /**

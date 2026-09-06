@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 import { Unit } from './Unit';
+import { Building } from './Building';
+import { ResourceNode } from './ResourceNode';
 import { colors, strings } from './i18n';
 
 export class Minimap {
@@ -59,8 +61,41 @@ export class Minimap {
     this.container.add(border);
   }
 
-  update(playerUnits: Unit[], enemyUnits: Unit[], camera: Phaser.Cameras.Scene2D.Camera): void {
+  update(
+    playerUnits: Unit[], 
+    enemyUnits: Unit[], 
+    camera: Phaser.Cameras.Scene2D.Camera,
+    playerHQ?: Building,
+    enemyHQ?: Building,
+    resourceNodes?: ResourceNode[]
+  ): void {
     this.mapGraphics.clear();
+    
+    // Draw resource nodes
+    if (resourceNodes) {
+      for (const node of resourceNodes) {
+        const x = node.x * this.scaleX;
+        const y = node.y * this.scaleY;
+        const nodeColor = node.nodeData.type === 'biomass' ? 0x22C55E : 0x3B82F6;
+        this.mapGraphics.fillStyle(nodeColor, 0.6);
+        this.mapGraphics.fillCircle(x, y, 4);
+      }
+    }
+    
+    // Draw HQs
+    if (playerHQ) {
+      const x = playerHQ.x * this.scaleX;
+      const y = playerHQ.y * this.scaleY;
+      this.mapGraphics.fillStyle(colors.player, 1);
+      this.mapGraphics.fillRect(x - 4, y - 4, 8, 8);
+    }
+    
+    if (enemyHQ && enemyHQ.visible) {
+      const x = enemyHQ.x * this.scaleX;
+      const y = enemyHQ.y * this.scaleY;
+      this.mapGraphics.fillStyle(colors.rival, 1);
+      this.mapGraphics.fillRect(x - 4, y - 4, 8, 8);
+    }
 
     // Draw player units (always visible)
     for (const unit of playerUnits) {
