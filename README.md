@@ -77,9 +77,13 @@ The game will open automatically at `http://localhost:3000`
 - **Enemy forces** (orange) spawn on the right - 3-6 random hybrids
 - **Large scrollable map** (2400×1800) with camera controls
 - **Fog of war**: Unexplored areas are dark; explored but not visible are darkened; currently visible areas are clear
-  - Player units reveal areas based on sight radius
-  - Scout units (Bat-Echo) have larger vision range
-  - Enemy units hidden when outside vision range
+  - Player units reveal areas based on sight radius (200px base, scouts 300px)
+  - **Vision ≠ Aggro**: Enemy AI has separate aggro radius (250px)
+  - Enemies can engage from outside player vision (ambush mechanic)
+  - Enemy units vanish when leaving visible area
+- **Minimap** (bottom-right): Shows player (turquoise) and visible enemy (orange) positions
+  - Click to jump camera to location
+  - White rectangle shows current viewport
 - **HP bars** at the top show overall army health
   - Green: >50% HP
   - Yellow: 25-50% HP  

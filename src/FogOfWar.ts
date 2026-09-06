@@ -19,7 +19,7 @@ export class FogOfWar {
     this.fogGraphics.setDepth(1000);
   }
 
-  update(playerUnits: Array<{ x: number; y: number; creature: { range: number; role?: string } }>): void {
+  update(playerUnits: Array<{ x: number; y: number; creature: { vision: number } }>): void {
     this.visibleMap = Array(this.mapHeight).fill(null).map(() => Array(this.mapWidth).fill(false));
 
     for (const unit of playerUnits) {
@@ -30,12 +30,8 @@ export class FogOfWar {
     this.render();
   }
 
-  private getSightRadius(unit: { creature: { range: number; role?: string } }): number {
-    const baseRadius = 200;
-    if (unit.creature.role === 'scout') {
-      return baseRadius * 1.5;
-    }
-    return baseRadius;
+  private getSightRadius(unit: { creature: { vision: number } }): number {
+    return unit.creature.vision * this.gridSize;
   }
 
   private revealArea(centerX: number, centerY: number, radius: number): void {

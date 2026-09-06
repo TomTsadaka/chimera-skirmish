@@ -10,6 +10,7 @@ export const ANIMAL_ARCHETYPES: AnimalArchetype[] = [
     speed: 9,
     attack: 10,
     range: 1,
+    vision: 7,
     special: 'fog reveal small AoE',
     primaryColor: '#4a4a4a',
     secondaryColor: '#6b5b95'
@@ -23,6 +24,7 @@ export const ANIMAL_ARCHETYPES: AnimalArchetype[] = [
     speed: 3,
     attack: 18,
     range: 1,
+    vision: 3,
     special: 'shield shove',
     primaryColor: '#3e3e3e',
     secondaryColor: '#5d5d5d'
@@ -36,6 +38,7 @@ export const ANIMAL_ARCHETYPES: AnimalArchetype[] = [
     speed: 8,
     attack: 28,
     range: 1,
+    vision: 4,
     special: 'poison DoT',
     primaryColor: '#2ecc71',
     secondaryColor: '#27ae60'
@@ -49,6 +52,7 @@ export const ANIMAL_ARCHETYPES: AnimalArchetype[] = [
     speed: 8,
     attack: 16,
     range: 4,
+    vision: 6,
     special: 'dive (+dmg, CD)',
     primaryColor: '#e67e22',
     secondaryColor: '#d35400'
@@ -62,6 +66,7 @@ export const ANIMAL_ARCHETYPES: AnimalArchetype[] = [
     speed: 2,
     attack: 12,
     range: 1,
+    vision: 3,
     special: 'armor + light reflect',
     primaryColor: '#3498db',
     secondaryColor: '#5dade2'
@@ -75,6 +80,7 @@ export const ANIMAL_ARCHETYPES: AnimalArchetype[] = [
     speed: 4,
     attack: 11,
     range: 3,
+    vision: 4,
     special: 'ink cloud slow',
     primaryColor: '#9b59b6',
     secondaryColor: '#8e44ad'
@@ -88,6 +94,7 @@ export const ANIMAL_ARCHETYPES: AnimalArchetype[] = [
     speed: 7,
     attack: 20,
     range: 2,
+    vision: 5,
     special: 'ram shove',
     primaryColor: '#a0826d',
     secondaryColor: '#c9b29a'
@@ -101,6 +108,7 @@ export const ANIMAL_ARCHETYPES: AnimalArchetype[] = [
     speed: 3,
     attack: 32,
     range: 5,
+    vision: 6,
     special: 'shock hop AoE',
     primaryColor: '#f1c40f',
     secondaryColor: '#f39c12'
@@ -120,6 +128,8 @@ export class GameData {
     
     const range = Math.max(parent1.range, parent2.range);
     
+    const vision = Math.max(parent1.vision, parent2.vision);
+    
     const stronger = parent1.attack >= parent2.attack ? parent1 : parent2;
     const weaker = parent1.attack >= parent2.attack ? parent2 : parent1;
     const specialPrimary = stronger.special;
@@ -136,6 +146,7 @@ export class GameData {
       speed,
       attack,
       range,
+      vision,
       specialPrimary,
       specialSecondary,
       primaryColor: parent1.primaryColor,

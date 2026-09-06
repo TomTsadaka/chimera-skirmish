@@ -7,6 +7,7 @@ export interface AnimalArchetype {
   speed: number;
   attack: number;
   range: number;
+  vision: number;
   special: string;
   primaryColor: string;
   secondaryColor: string;
@@ -21,6 +22,7 @@ export interface HybridCreature {
   speed: number;
   attack: number;
   range: number;
+  vision: number;
   specialPrimary: string;
   specialSecondary: string;
   primaryColor: string;
