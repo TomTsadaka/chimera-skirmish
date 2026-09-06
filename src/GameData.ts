@@ -1,135 +1,35 @@
 import { AnimalArchetype, HybridCreature } from './types';
+import animalsData from '../data/animals-100.json';
 
-export const ANIMAL_ARCHETYPES: AnimalArchetype[] = [
-  {
-    id: 'bat-echo',
-    name: 'Bat-Echo',
-    nameHebrew: 'עטלף-הד',
-    role: 'scout',
-    hp: 50,
-    speed: 9,
-    attack: 10,
-    range: 1,
-    vision: 7,
-    special: 'fog reveal small AoE',
-    primaryColor: '#4a4a4a',
-    secondaryColor: '#6b5b95',
-    costDNA: 40,
-    costBiomass: 20
-  },
-  {
-    id: 'basalt-rhino',
-    name: 'Basalt-Rhino',
-    nameHebrew: 'קרנף-בזלת',
-    role: 'tank',
-    hp: 180,
-    speed: 3,
-    attack: 18,
-    range: 1,
-    vision: 3,
-    special: 'shield shove',
-    primaryColor: '#3e3e3e',
-    secondaryColor: '#5d5d5d',
-    costDNA: 100,
-    costBiomass: 60
-  },
-  {
-    id: 'quill-snake',
-    name: 'Quill-Snake',
-    nameHebrew: 'נחש-זיפים',
-    role: 'assassin',
-    hp: 55,
-    speed: 8,
-    attack: 28,
-    range: 1,
-    vision: 4,
-    special: 'poison DoT',
-    primaryColor: '#2ecc71',
-    secondaryColor: '#27ae60',
-    costDNA: 70,
-    costBiomass: 25
-  },
-  {
-    id: 'vinegar-eagle',
-    name: 'Vinegar-Eagle',
-    nameHebrew: 'עיט-חומץ',
-    role: 'mobile ranged',
-    hp: 70,
-    speed: 8,
-    attack: 16,
-    range: 4,
-    vision: 6,
-    special: 'dive (+dmg, CD)',
-    primaryColor: '#e67e22',
-    secondaryColor: '#d35400',
-    costDNA: 80,
-    costBiomass: 40
-  },
-  {
-    id: 'crystal-crab',
-    name: 'Crystal-Crab',
-    nameHebrew: 'סרטן-גביש',
-    role: 'defense',
-    hp: 160,
-    speed: 2,
-    attack: 12,
-    range: 1,
-    vision: 3,
-    special: 'armor + light reflect',
-    primaryColor: '#3498db',
-    secondaryColor: '#5dade2',
-    costDNA: 85,
-    costBiomass: 50
-  },
-  {
-    id: 'ink-octopus',
-    name: 'Ink-Octopus',
-    nameHebrew: 'תמנון-דיו',
-    role: 'control',
-    hp: 90,
-    speed: 4,
-    attack: 11,
-    range: 3,
-    vision: 4,
-    special: 'ink cloud slow',
-    primaryColor: '#9b59b6',
-    secondaryColor: '#8e44ad',
-    costDNA: 65,
-    costBiomass: 35
-  },
-  {
-    id: 'horn-deer',
-    name: 'Horn-Deer',
-    nameHebrew: 'צבי-קרן',
-    role: 'skirmish',
-    hp: 85,
-    speed: 7,
-    attack: 20,
-    range: 2,
-    vision: 5,
-    special: 'ram shove',
-    primaryColor: '#a0826d',
-    secondaryColor: '#c9b29a',
-    costDNA: 55,
-    costBiomass: 30
-  },
-  {
-    id: 'thunder-frog',
-    name: 'Thunder-Frog',
-    nameHebrew: 'צפרדע-רעם',
-    role: 'artillery',
-    hp: 60,
-    speed: 3,
-    attack: 32,
-    range: 5,
-    vision: 6,
-    special: 'shock hop AoE',
-    primaryColor: '#f1c40f',
-    secondaryColor: '#f39c12',
-    costDNA: 90,
-    costBiomass: 45
+// Load 100 animals from JSON data file
+export const ANIMAL_ARCHETYPES: AnimalArchetype[] = animalsData.map(animal => ({
+  id: animal.id,
+  name: animal.nameEn,
+  nameHebrew: animal.nameHe,
+  role: animal.tags[0] || 'combat', // Use first tag as role
+  hp: animal.hp,
+  speed: animal.speed,
+  attack: animal.attack,
+  range: animal.range,
+  vision: 5, // Default vision
+  special: animal.special, // Hebrew special
+  primaryColor: generateColorFromId(animal.id, 0),
+  secondaryColor: generateColorFromId(animal.id, 1),
+  costDNA: animal.dnaCost,
+  costBiomass: animal.biomassCost
+}));
+
+// Generate consistent colors from animal ID
+function generateColorFromId(id: string, seed: number): string {
+  let hash = seed;
+  for (let i = 0; i < id.length; i++) {
+    hash = id.charCodeAt(i) + ((hash << 5) - hash);
   }
-];
+  const h = Math.abs(hash % 360);
+  const s = 60 + (Math.abs(hash) % 30);
+  const l = 40 + (Math.abs(hash >> 4) % 20);
+  return `hsl(${h}, ${s}%, ${l}%)`;
+}
 
 export class GameData {
   static createHybrid(parent1: AnimalArchetype, parent2: AnimalArchetype): HybridCreature {
