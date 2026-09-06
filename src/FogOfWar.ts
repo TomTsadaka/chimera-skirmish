@@ -1,12 +1,14 @@
 import Phaser from 'phaser';
+import { GAME_CONSTANTS } from './constants';
 
 export class FogOfWar {
   private fogGraphics: Phaser.GameObjects.Graphics;
   private exploredMap: boolean[][];
   private visibleMap: boolean[][];
-  private gridSize: number = 32;
+  private gridSize: number = GAME_CONSTANTS.TILE_SIZE;
   private mapWidth: number;
   private mapHeight: number;
+  private lastUpdateTime: number = 0;
 
   constructor(scene: Phaser.Scene, mapWidth: number, mapHeight: number) {
     this.mapWidth = Math.ceil(mapWidth / this.gridSize);
@@ -20,6 +22,14 @@ export class FogOfWar {
   }
 
   update(playerUnits: Array<{ x: number; y: number; creature: { vision: number } }>): void {
+    const currentTime = Date.now();
+    
+    // Refresh fog at specified interval (100-150ms)
+    if (currentTime - this.lastUpdateTime < GAME_CONSTANTS.FOG_REFRESH_INTERVAL) {
+      return;
+    }
+    
+    this.lastUpdateTime = currentTime;
     this.visibleMap = Array(this.mapHeight).fill(null).map(() => Array(this.mapWidth).fill(false));
 
     for (const unit of playerUnits) {
@@ -64,12 +74,15 @@ export class FogOfWar {
         const screenY = y * this.gridSize;
 
         if (!this.exploredMap[y][x]) {
-          this.fogGraphics.fillStyle(0x000000, 0.95);
+          // Unexplored: black
+          this.fogGraphics.fillStyle(GAME_CONSTANTS.FOG_UNEXPLORED_COLOR, 0.95);
           this.fogGraphics.fillRect(screenX, screenY, this.gridSize, this.gridSize);
         } else if (!this.visibleMap[y][x]) {
-          this.fogGraphics.fillStyle(0x000000, 0.6);
+          // Explored but not visible: 40-50% dark
+          this.fogGraphics.fillStyle(GAME_CONSTANTS.FOG_EXPLORED_COLOR, GAME_CONSTANTS.FOG_EXPLORED_ALPHA);
           this.fogGraphics.fillRect(screenX, screenY, this.gridSize, this.gridSize);
         }
+        // Visible: no fog rendering (clear)
       }
     }
   }

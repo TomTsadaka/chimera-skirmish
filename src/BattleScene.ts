@@ -6,6 +6,7 @@ import { ANIMAL_ARCHETYPES, GameData } from './GameData';
 import { strings, colors } from './i18n';
 import { FogOfWar } from './FogOfWar';
 import { Minimap } from './Minimap';
+import { GAME_CONSTANTS } from './constants';
 
 export class BattleScene extends Phaser.Scene {
   private playerUnits: Unit[] = [];
@@ -28,11 +29,11 @@ export class BattleScene extends Phaser.Scene {
   private helpOverlay: Phaser.GameObjects.Container | null = null;
   private pointerInWindow: boolean = true;
   
-  private readonly MAP_WIDTH = 2400;
-  private readonly MAP_HEIGHT = 1800;
-  private readonly CAMERA_SPEED = 8;
-  private readonly MIN_ZOOM = 0.5;
-  private readonly MAX_ZOOM = 1.5;
+  private readonly MAP_WIDTH = GAME_CONSTANTS.MAP_WIDTH;
+  private readonly MAP_HEIGHT = GAME_CONSTANTS.MAP_HEIGHT;
+  private readonly CAMERA_SPEED = GAME_CONSTANTS.CAMERA_PAN_SPEED;
+  private readonly MIN_ZOOM = GAME_CONSTANTS.CAMERA_ZOOM_MIN;
+  private readonly MAX_ZOOM = GAME_CONSTANTS.CAMERA_ZOOM_MAX;
 
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasdKeys!: { w: Phaser.Input.Keyboard.Key; a: Phaser.Input.Keyboard.Key; s: Phaser.Input.Keyboard.Key; d: Phaser.Input.Keyboard.Key };
@@ -43,13 +44,17 @@ export class BattleScene extends Phaser.Scene {
 
   create(data: { hybrid: HybridCreature }): void {
     this.gameEnded = false;
+    this.controlGroups.clear(); // Clear control groups on restart
     
     this.registry.set('lastHybrid', data.hybrid);
 
     this.add.rectangle(this.MAP_WIDTH / 2, this.MAP_HEIGHT / 2, this.MAP_WIDTH, this.MAP_HEIGHT, 0x1a3a1a);
     
     const cam = this.cameras.main;
-    cam.setBounds(0, 0, this.MAP_WIDTH, this.MAP_HEIGHT);
+    const margin = GAME_CONSTANTS.CAMERA_MARGIN_PERCENT / 100;
+    const marginX = this.MAP_WIDTH * margin;
+    const marginY = this.MAP_HEIGHT * margin;
+    cam.setBounds(-marginX, -marginY, this.MAP_WIDTH + marginX * 2, this.MAP_HEIGHT + marginY * 2);
     cam.setZoom(1);
 
     this.fogOfWar = new FogOfWar(this, this.MAP_WIDTH, this.MAP_HEIGHT);
@@ -65,6 +70,7 @@ export class BattleScene extends Phaser.Scene {
 
     this.setupUI();
     this.setupInput();
+    this.input.keyboard?.on("keydown-G", () => { this.scene.start("GameOverScene", { victory: true }); });
     this.setupKeyboard();
 
     if (!this.onboardingShown) {
@@ -124,12 +130,24 @@ export class BattleScene extends Phaser.Scene {
       this.pointerInWindow = true;
     });
 
-    this.input.on('wheel', (_pointer: any, _gameObjects: any, _deltaX: number, deltaY: number) => {
+    this.input.on('wheel', (pointer: Phaser.Input.Pointer, _gameObjects: any, _deltaX: number, deltaY: number) => {
       if (this.gameEnded) return;
       
       const cam = this.cameras.main;
-      const newZoom = Phaser.Math.Clamp(cam.zoom - deltaY * 0.001, this.MIN_ZOOM, this.MAX_ZOOM);
-      cam.setZoom(newZoom);
+      const zoomDirection = deltaY > 0 ? -1 : 1;
+      const newZoom = Phaser.Math.Clamp(
+        cam.zoom + zoomDirection * GAME_CONSTANTS.CAMERA_ZOOM_STEP,
+        this.MIN_ZOOM,
+        this.MAX_ZOOM
+      );
+      
+      if (newZoom !== cam.zoom) {
+        const worldPoint = cam.getWorldPoint(pointer.x, pointer.y);
+        cam.setZoom(newZoom);
+        const newWorldPoint = cam.getWorldPoint(pointer.x, pointer.y);
+        cam.scrollX += worldPoint.x - newWorldPoint.x;
+        cam.scrollY += worldPoint.y - newWorldPoint.y;
+      }
     });
 
     this.input.mouse!.disableContextMenu();
@@ -466,34 +484,42 @@ export class BattleScene extends Phaser.Scene {
   private updateCameraPan(): void {
     const cam = this.cameras.main;
     const pointer = this.input.activePointer;
+    const panSpeed = this.CAMERA_SPEED; // world units per frame at 60fps
 
+    // WASD/Arrow keys - no acceleration
     if (this.cursors.left.isDown || this.wasdKeys.a.isDown) {
-      cam.scrollX -= this.CAMERA_SPEED;
+      cam.scrollX -= panSpeed;
     }
     if (this.cursors.right.isDown || this.wasdKeys.d.isDown) {
-      cam.scrollX += this.CAMERA_SPEED;
+      cam.scrollX += panSpeed;
     }
     if (this.cursors.up.isDown || this.wasdKeys.w.isDown) {
-      cam.scrollY -= this.CAMERA_SPEED;
+      cam.scrollY -= panSpeed;
     }
     if (this.cursors.down.isDown || this.wasdKeys.s.isDown) {
-      cam.scrollY += this.CAMERA_SPEED;
+      cam.scrollY += panSpeed;
     }
 
+    // Edge-pan: 2.5% of screen with min/max constraints
     if (this.pointerInWindow && !this.helpOverlay) {
-      const edgePercent = 0.025;
-      const edgeThreshold = this.scale.width * edgePercent;
+      const edgeBandSize = Math.max(
+        GAME_CONSTANTS.CAMERA_EDGE_PAN_MIN,
+        Math.min(
+          GAME_CONSTANTS.CAMERA_EDGE_PAN_MAX,
+          this.scale.width * (GAME_CONSTANTS.CAMERA_EDGE_PAN_PERCENT / 100)
+        )
+      );
 
-      if (pointer.x < edgeThreshold) {
-        cam.scrollX -= this.CAMERA_SPEED;
-      } else if (pointer.x > this.scale.width - edgeThreshold) {
-        cam.scrollX += this.CAMERA_SPEED;
+      if (pointer.x < edgeBandSize) {
+        cam.scrollX -= panSpeed;
+      } else if (pointer.x > this.scale.width - edgeBandSize) {
+        cam.scrollX += panSpeed;
       }
 
-      if (pointer.y < edgeThreshold) {
-        cam.scrollY -= this.CAMERA_SPEED;
-      } else if (pointer.y > this.scale.height - edgeThreshold) {
-        cam.scrollY += this.CAMERA_SPEED;
+      if (pointer.y < edgeBandSize) {
+        cam.scrollY -= panSpeed;
+      } else if (pointer.y > this.scale.height - edgeBandSize) {
+        cam.scrollY += panSpeed;
       }
     }
   }
@@ -604,21 +630,34 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private assignControlGroup(groupNumber: number): void {
-    if (this.selectedUnits.length > 0) {
-      this.controlGroups.set(groupNumber, [...this.selectedUnits]);
+    // Only assign player units (never enemies)
+    const playerOnlyUnits = this.selectedUnits.filter(unit => this.playerUnits.includes(unit));
+    
+    if (playerOnlyUnits.length > 0) {
+      this.controlGroups.set(groupNumber, [...playerOnlyUnits]);
     }
   }
 
   private recallControlGroup(groupNumber: number): void {
     const group = this.controlGroups.get(groupNumber);
-    if (!group) return;
+    if (!group) return; // Empty group = no-op
 
+    // Filter out dead units
+    const aliveUnits = group.filter(unit => unit.currentHp > 0 && this.playerUnits.includes(unit));
+    
+    // Update the stored group to remove dead units
+    if (aliveUnits.length === 0) {
+      this.controlGroups.delete(groupNumber); // Remove empty group
+      return; // Empty group = no-op
+    }
+    
+    this.controlGroups.set(groupNumber, aliveUnits);
+
+    // Select the alive units
     this.clearSelection();
-    for (const unit of group) {
-      if (unit.currentHp > 0) {
-        unit.setSelected(true);
-        this.selectedUnits.push(unit);
-      }
+    for (const unit of aliveUnits) {
+      unit.setSelected(true);
+      this.selectedUnits.push(unit);
     }
   }
 
