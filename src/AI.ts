@@ -266,6 +266,33 @@ export class AI {
       const unit = new Unit(this.hq.scene, x, y, archetypeCreature, 'enemy', 'combat');
       this.units.push(unit);
       this.spawnPositions.set(unit, { x, y });
+      
+      // Optional: Floating label showing wave archetype name (Hebrew)
+      const hebrewNames: Record<string, string> = {
+        'bat-echo': 'עטלף',
+        'horn-deer': 'צבי',
+        'quill-snake': 'נחש'
+      };
+      const hebrewName = hebrewNames[archetype.id];
+      if (hebrewName) {
+        const label = this.hq.scene.add.text(x, y - 40, hebrewName, {
+          fontSize: '16px',
+          color: '#FF6B6B',
+          fontFamily: 'Arial',
+          fontStyle: 'bold',
+          stroke: '#000000',
+          strokeThickness: 3
+        }).setOrigin(0.5);
+        
+        // Fade out and destroy after 2s
+        this.hq.scene.tweens.add({
+          targets: label,
+          alpha: 0,
+          y: y - 60,
+          duration: 2000,
+          onComplete: () => label.destroy()
+        });
+      }
     }
   }
 

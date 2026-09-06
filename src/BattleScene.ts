@@ -790,7 +790,8 @@ export class BattleScene extends Phaser.Scene {
   private getResourceNodeAtPosition(x: number, y: number): ResourceNode | null {
     for (const node of this.resourceNodes) {
       const distance = Phaser.Math.Distance.Between(x, y, node.x, node.y);
-      if (distance < 30) {
+      // Increased hit area for new larger hexagonal nodes
+      if (distance < 40) {
         return node;
       }
     }
@@ -869,6 +870,26 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private issueOrderToSelected(x: number, y: number): void {
+    // Check if clicking on enemy HQ (make HQs clearly attackable)
+    if (this.enemyHQ) {
+      const distanceToHQ = Phaser.Math.Distance.Between(x, y, this.enemyHQ.x, this.enemyHQ.y);
+      if (distanceToHQ < 60) {
+        // Order combat units to attack enemy HQ
+        for (const unit of this.selectedUnits) {
+          this.tweens.killTweensOf(unit);
+          if (unit.role === 'combat') {
+            unit.moveToPosition(this.enemyHQ.x, this.enemyHQ.y);
+            unit.targetEnemy = null; // Clear old target
+          } else {
+            // Workers just move
+            unit.moveToPosition(x, y);
+            unit.targetEnemy = null;
+          }
+        }
+        return;
+      }
+    }
+    
     const targetUnit = this.getUnitAtPosition(x, y);
 
     for (const unit of this.selectedUnits) {
