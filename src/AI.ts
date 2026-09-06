@@ -2,9 +2,9 @@ import Phaser from 'phaser';
 import { Unit } from './Unit';
 import { Building } from './Building';
 import { ResourceNode } from './ResourceNode';
-import { EconomyState, AnimalArchetype } from './types';
+import { EconomyState, AnimalArchetype, HybridCreature } from './types';
 import { GAME_CONSTANTS, getAggroRadius, getLeashDistance } from './constants';
-import { ANIMAL_ARCHETYPES, GameData } from './GameData';
+import { ANIMAL_ARCHETYPES } from './GameData';
 
 export class AI {
   private units: Unit[];
@@ -239,17 +239,31 @@ export class AI {
       this.resources.dna -= archetype.costDNA;
       this.resources.biomass -= archetype.costBiomass;
       
+      // Blocker 2 fix: Spawn the actual archetype unit, not a random hybrid
+      const archetypeCreature: HybridCreature = {
+        id: `ai_archetype_${archetype.id}_${Date.now()}`,
+        parent1: archetype,
+        parent2: archetype,
+        name: archetype.name,
+        hp: archetype.hp,
+        speed: archetype.speed,
+        attack: archetype.attack,
+        range: archetype.range,
+        vision: archetype.vision,
+        specialPrimary: archetype.special,
+        specialSecondary: '',
+        primaryColor: archetype.primaryColor,
+        secondaryColor: archetype.secondaryColor,
+        costDNA: archetype.costDNA,
+        costBiomass: archetype.costBiomass
+      };
+      
       const angle = Math.random() * Math.PI * 2;
       const radius = 100;
       const x = this.hq.x + Math.cos(angle) * radius;
       const y = this.hq.y + Math.sin(angle) * radius;
       
-      // Create a random hybrid for the enemy
-      const animal1 = Phaser.Math.RND.pick(ANIMAL_ARCHETYPES);
-      const animal2 = Phaser.Math.RND.pick(ANIMAL_ARCHETYPES.filter(a => a.id !== animal1.id));
-      const hybrid = GameData.createHybrid(animal1, animal2);
-      
-      const unit = new Unit(this.hq.scene, x, y, hybrid, 'enemy', 'combat');
+      const unit = new Unit(this.hq.scene, x, y, archetypeCreature, 'enemy', 'combat');
       this.units.push(unit);
       this.spawnPositions.set(unit, { x, y });
     }
