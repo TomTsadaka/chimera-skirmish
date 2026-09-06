@@ -20,7 +20,7 @@ export class RTSCamera {
   private mouseAtEdge = { x: 0, y: 0 };
   private pointerInWindow = true;
   
-  private readonly PAN_SPEED = GAME_CONSTANTS.CAMERA_PAN_SPEED / 1000; // Convert to units/ms
+  private readonly PAN_SPEED = GAME_CONSTANTS.CAMERA_PAN_SPEED; // World units per second (delta is in seconds)
   private readonly MIN_HEIGHT = 30;
   private readonly MAX_HEIGHT = 100;
   private readonly CAMERA_ANGLE = 50; // Degrees from horizontal (45-55° range per spec)
