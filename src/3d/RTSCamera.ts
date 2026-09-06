@@ -23,7 +23,8 @@ export class RTSCamera {
   private readonly PAN_SPEED = GAME_CONSTANTS.CAMERA_PAN_SPEED / 1000; // Convert to units/ms
   private readonly MIN_HEIGHT = 30;
   private readonly MAX_HEIGHT = 100;
-  private readonly CAMERA_ANGLE = 60; // Degrees from horizontal
+  private readonly CAMERA_ANGLE = 50; // Degrees from horizontal (45-55° range per spec)
+  public helpOverlayOpen = false; // Used by GameManager
   
   private readonly MAP_WIDTH = GAME_CONSTANTS.MAP_WIDTH;
   private readonly MAP_HEIGHT = GAME_CONSTANTS.MAP_HEIGHT;
@@ -91,6 +92,9 @@ export class RTSCamera {
   private onWheel(event: WheelEvent): void {
     event.preventDefault();
     
+    // Get mouse position in world space before zoom
+    const mouseWorldBefore = this.screenToWorld(event.clientX, event.clientY);
+    
     const currentHeight = this.camera.position.y;
     const zoomSpeed = 3;
     const deltaHeight = event.deltaY > 0 ? zoomSpeed : -zoomSpeed;
@@ -100,7 +104,43 @@ export class RTSCamera {
       this.MAX_HEIGHT
     );
     
+    // Update camera position
     this.updateCameraPosition(newHeight);
+    
+    // Get mouse position in world space after zoom
+    const mouseWorldAfter = this.screenToWorld(event.clientX, event.clientY);
+    
+    // Adjust target to zoom toward cursor
+    if (mouseWorldBefore && mouseWorldAfter) {
+      const delta = new THREE.Vector3().subVectors(mouseWorldBefore, mouseWorldAfter);
+      this.target.add(delta);
+      
+      // Clamp target to map bounds
+      const margin = 20;
+      this.target.x = THREE.MathUtils.clamp(this.target.x, margin, this.MAP_WIDTH - margin);
+      this.target.z = THREE.MathUtils.clamp(this.target.z, margin, this.MAP_HEIGHT - margin);
+      
+      // Update camera position with new target
+      this.updateCameraPosition(newHeight);
+    }
+  }
+  
+  private screenToWorld(screenX: number, screenY: number): THREE.Vector3 | null {
+    const rect = this.domElement.getBoundingClientRect();
+    const mouse = new THREE.Vector2(
+      ((screenX - rect.left) / rect.width) * 2 - 1,
+      -((screenY - rect.top) / rect.height) * 2 + 1
+    );
+    
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, this.camera);
+    
+    // Raycast against ground plane (y=0)
+    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    const target = new THREE.Vector3();
+    raycaster.ray.intersectPlane(plane, target);
+    
+    return target || null;
   }
 
   private onPointerMove(event: PointerEvent): void {
@@ -197,5 +237,9 @@ export class RTSCamera {
     // For now, instant pan. Can add smooth animation later
     this.target.set(x, 0, z);
     this.updateCameraPosition(this.camera.position.y);
+  }
+  
+  public setHelpOverlayOpen(open: boolean): void {
+    this.helpOverlayOpen = open;
   }
 }

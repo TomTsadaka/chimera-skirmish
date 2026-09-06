@@ -4,6 +4,8 @@ import { Unit3D } from './Unit3D';
 import { Building3D } from './Building3D';
 import { ResourceNode3D } from './ResourceNode3D';
 import { UIManager } from './UIManager';
+import { Minimap3D } from './Minimap3D';
+import { RTSCamera } from './RTSCamera';
 import { HybridCreature, EconomyState, ResourceNode as ResourceNodeType, AnimalArchetype } from '../types';
 import { ANIMAL_ARCHETYPES, GameData } from '../GameData';
 import { GAME_CONSTANTS } from '../constants';
@@ -12,6 +14,8 @@ export class GameManager {
   private scene: THREE.Scene;
   private inputManager: InputManager;
   private uiManager: UIManager;
+  private camera: RTSCamera;
+  private minimap: Minimap3D;
   
   private playerUnits: Unit3D[] = [];
   private enemyUnits: Unit3D[] = [];
@@ -32,13 +36,18 @@ export class GameManager {
   private readonly MAP_WIDTH = GAME_CONSTANTS.MAP_WIDTH;
   private readonly MAP_HEIGHT = GAME_CONSTANTS.MAP_HEIGHT;
 
-  constructor(scene: THREE.Scene, inputManager: InputManager) {
+  constructor(scene: THREE.Scene, inputManager: InputManager, camera: RTSCamera) {
     this.scene = scene;
     this.inputManager = inputManager;
+    this.camera = camera;
     this.uiManager = new UIManager();
+    this.minimap = new Minimap3D(this.MAP_WIDTH, this.MAP_HEIGHT);
     
     // Setup input callbacks
     this.setupInputCallbacks();
+    
+    // Setup keyboard shortcuts
+    this.setupKeyboardShortcuts();
     
     // Listen for resource gathering (custom event)
     // @ts-ignore - custom event type
@@ -60,6 +69,58 @@ export class GameManager {
       if (this.gameEnded) return;
       this.handleBoxSelect(start, end, shift);
     });
+    
+    // Minimap click callback
+    this.minimap.onMinimapClickCallback((x: number, z: number) => {
+      if (!this.gameEnded) {
+        this.camera.panTo(x, z);
+      }
+    });
+  }
+  
+  private setupKeyboardShortcuts(): void {
+    window.addEventListener('keydown', (event: KeyboardEvent) => {
+      if (this.gameEnded) return;
+      
+      // Space: center on selection
+      if (event.code === 'Space' && this.selectedUnits.length > 0) {
+        event.preventDefault();
+        this.centerCameraOnSelection();
+      }
+      
+      // F1: toggle help overlay
+      if (event.code === 'F1') {
+        event.preventDefault();
+        this.uiManager.toggleHelpOverlay();
+        // Notify camera about help overlay state
+        this.camera.setHelpOverlayOpen(this.uiManager.isHelpOverlayOpen());
+      }
+      
+      // Esc: close help or deselect
+      if (event.code === 'Escape') {
+        if (this.uiManager.isHelpOverlayOpen()) {
+          this.uiManager.closeHelpOverlay();
+          this.camera.setHelpOverlayOpen(false);
+        } else {
+          this.clearSelection();
+        }
+      }
+    });
+  }
+  
+  private centerCameraOnSelection(): void {
+    if (this.selectedUnits.length === 0) return;
+    
+    let sumX = 0, sumZ = 0;
+    for (const unit of this.selectedUnits) {
+      const pos = unit.getPosition();
+      sumX += pos.x;
+      sumZ += pos.z;
+    }
+    
+    const avgX = sumX / this.selectedUnits.length;
+    const avgZ = sumZ / this.selectedUnits.length;
+    this.camera.panTo(avgX, avgZ);
   }
 
   public start(): void {
@@ -86,11 +147,12 @@ export class GameManager {
     // Setup UI
     this.uiManager.show();
     this.uiManager.updateResources(this.playerResources);
-    this.uiManager.setupTrainPanel(this.armyRoster, this.playerResources, {
-      onTrainWorker: () => this.trainWorker(),
-      onTrainUnit: (hybrid: HybridCreature) => this.trainCombatUnit(hybrid),
-      onTrainArchetype: (archetype: AnimalArchetype) => this.trainArchetype(archetype)
-    });
+    this.uiManager.updateHQHP(this.playerHQ, this.enemyHQ);
+    // Train panel will be shown/hidden based on selection
+    this.uiManager.hideTrainPanel();
+    
+    // Show minimap
+    this.minimap.show();
     
     this.gameEnded = false;
   }
@@ -235,6 +297,22 @@ export class GameManager {
   }
 
   private handleLeftClick(worldPos: THREE.Vector3, shift: boolean): void {
+    // Check if clicking on HQ first
+    const clickedHQ = this.getHQAtPosition(worldPos);
+    if (clickedHQ === this.playerHQ) {
+      // Select player HQ - show train panel
+      if (!shift) {
+        this.clearSelection();
+      }
+      this.uiManager.showTrainPanel(this.armyRoster, this.playerResources, {
+        onTrainWorker: () => this.trainWorker(),
+        onTrainUnit: (hybrid: HybridCreature) => this.trainCombatUnit(hybrid),
+        onTrainArchetype: (archetype: AnimalArchetype) => this.trainArchetype(archetype)
+      });
+      this.updateSelectionUI();
+      return;
+    }
+    
     // Raycast to find unit at click position
     const clickedUnit = this.getUnitAtPosition(worldPos);
     
@@ -252,11 +330,23 @@ export class GameManager {
       if (!this.selectedUnits.includes(clickedUnit)) {
         this.selectedUnits.push(clickedUnit);
       }
+      // Hide train panel when selecting units (not HQ)
+      this.uiManager.hideTrainPanel();
     } else if (!shift) {
       this.clearSelection();
+      this.uiManager.hideTrainPanel();
     }
     
     this.updateSelectionUI();
+  }
+  
+  private getHQAtPosition(worldPos: THREE.Vector3): Building3D | null {
+    const distanceToPlayerHQ = worldPos.distanceTo(this.playerHQ.getPosition());
+    const distanceToEnemyHQ = worldPos.distanceTo(this.enemyHQ.getPosition());
+    
+    if (distanceToPlayerHQ < 10) return this.playerHQ;
+    if (distanceToEnemyHQ < 10) return this.enemyHQ;
+    return null;
   }
 
   private handleRightClick(worldPos: THREE.Vector3): void {
@@ -357,6 +447,7 @@ export class GameManager {
 
   private updateResourceUI(): void {
     this.uiManager.updateResources(this.playerResources);
+    this.uiManager.updateHQHP(this.playerHQ, this.enemyHQ);
     this.uiManager.refreshTrainPanel(this.playerResources);
   }
 
@@ -509,6 +600,16 @@ export class GameManager {
     // Simple AI
     this.updateAI(delta * 1000);
     
+    // Update minimap
+    this.minimap.update(
+      this.playerUnits,
+      this.enemyUnits,
+      this.camera,
+      this.playerHQ,
+      this.enemyHQ,
+      this.resourceNodes
+    );
+    
     // Check win/lose conditions
     this.checkGameEnd();
     
@@ -608,5 +709,6 @@ export class GameManager {
     this.enemyHQ.destroy();
     
     this.uiManager.hide();
+    this.minimap.destroy();
   }
 }

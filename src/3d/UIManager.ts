@@ -7,6 +7,9 @@ import { ANIMAL_ARCHETYPES } from '../GameData';
 export class UIManager {
   private container: HTMLDivElement;
   private gameOverEl: HTMLDivElement | null = null;
+  private helpOverlay: HTMLDivElement | null = null;
+  private trainPanel: HTMLDivElement | null = null;
+  private trainPanelVisible: boolean = false;
   
   private trainCallbacks: {
     onTrainWorker: () => void;
@@ -108,12 +111,13 @@ export class UIManager {
       padding: 0 100px;
     `;
     
-    // Player HP
+    // Player section (HQ + Army)
     const playerSection = document.createElement('div');
     playerSection.style.cssText = `
       display: flex;
       flex-direction: column;
       align-items: flex-start;
+      gap: 10px;
     `;
     
     const playerLabel = document.createElement('div');
@@ -122,28 +126,60 @@ export class UIManager {
       color: ${colors.playerHex};
       font-size: 18px;
       font-weight: bold;
-      margin-bottom: 5px;
       text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
     `;
     playerSection.appendChild(playerLabel);
+    
+    // Player HQ HP
+    const playerHQLabel = document.createElement('div');
+    playerHQLabel.textContent = strings.economy.hq;
+    playerHQLabel.style.cssText = `
+      color: #ffffff;
+      font-size: 14px;
+      margin-bottom: 2px;
+    `;
+    playerSection.appendChild(playerHQLabel);
+    
+    const playerHQBar = document.createElement('div');
+    playerHQBar.id = 'player-hq-hp-bar';
+    playerHQBar.style.cssText = `
+      width: 200px;
+      height: 16px;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    `;
+    playerSection.appendChild(playerHQBar);
+    
+    // Player Army HP
+    const playerArmyLabel = document.createElement('div');
+    playerArmyLabel.textContent = 'צבא'; // Army
+    playerArmyLabel.style.cssText = `
+      color: #ffffff;
+      font-size: 14px;
+      margin-bottom: 2px;
+    `;
+    playerSection.appendChild(playerArmyLabel);
     
     const playerBar = document.createElement('div');
     playerBar.id = 'player-hp-bar';
     playerBar.style.cssText = `
       width: 200px;
-      height: 20px;
+      height: 16px;
       background: rgba(0, 0, 0, 0.5);
       border-radius: 4px;
       overflow: hidden;
     `;
     playerSection.appendChild(playerBar);
     
-    // Enemy HP
+    // Enemy section (HQ + Army)
     const enemySection = document.createElement('div');
     enemySection.style.cssText = `
       display: flex;
       flex-direction: column;
       align-items: flex-end;
+      gap: 10px;
     `;
     
     const enemyLabel = document.createElement('div');
@@ -152,16 +188,47 @@ export class UIManager {
       color: ${colors.rivalHex};
       font-size: 18px;
       font-weight: bold;
-      margin-bottom: 5px;
       text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
     `;
     enemySection.appendChild(enemyLabel);
+    
+    // Enemy HQ HP
+    const enemyHQLabel = document.createElement('div');
+    enemyHQLabel.textContent = strings.economy.hq;
+    enemyHQLabel.style.cssText = `
+      color: #ffffff;
+      font-size: 14px;
+      margin-bottom: 2px;
+    `;
+    enemySection.appendChild(enemyHQLabel);
+    
+    const enemyHQBar = document.createElement('div');
+    enemyHQBar.id = 'enemy-hq-hp-bar';
+    enemyHQBar.style.cssText = `
+      width: 200px;
+      height: 16px;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    `;
+    enemySection.appendChild(enemyHQBar);
+    
+    // Enemy Army HP
+    const enemyArmyLabel = document.createElement('div');
+    enemyArmyLabel.textContent = 'צבא'; // Army
+    enemyArmyLabel.style.cssText = `
+      color: #ffffff;
+      font-size: 14px;
+      margin-bottom: 2px;
+    `;
+    enemySection.appendChild(enemyArmyLabel);
     
     const enemyBar = document.createElement('div');
     enemyBar.id = 'enemy-hp-bar';
     enemyBar.style.cssText = `
       width: 200px;
-      height: 20px;
+      height: 16px;
       background: rgba(0, 0, 0, 0.5);
       border-radius: 4px;
       overflow: hidden;
@@ -177,15 +244,17 @@ export class UIManager {
 
   private createTrainPanel(): HTMLDivElement {
     const panel = document.createElement('div');
+    panel.id = 'train-panel-container';
     panel.style.cssText = `
       position: absolute;
-      top: 150px;
-      right: 50px;
+      bottom: 80px;
+      right: 20px;
       width: 180px;
       background: rgba(0, 0, 0, 0.85);
       border-radius: 8px;
       padding: 15px;
       pointer-events: auto;
+      display: none;
     `;
     
     const title = document.createElement('div');
@@ -204,6 +273,7 @@ export class UIManager {
     panel.appendChild(unitsContainer);
     
     this.container.appendChild(panel);
+    this.trainPanel = panel;
     return panel;
   }
 
@@ -270,7 +340,28 @@ export class UIManager {
     }
   }
 
-  public setupTrainPanel(
+  public showTrainPanel(
+    armyRoster: HybridCreature[],
+    resources: EconomyState,
+    callbacks: {
+      onTrainWorker: () => void;
+      onTrainUnit: (hybrid: HybridCreature) => void;
+      onTrainArchetype: (archetype: AnimalArchetype) => void;
+    }
+  ): void {
+    if (!this.trainPanel) return;
+    this.trainPanel.style.display = 'block';
+    this.trainPanelVisible = true;
+    this.setupTrainPanel(armyRoster, resources, callbacks);
+  }
+  
+  public hideTrainPanel(): void {
+    if (!this.trainPanel) return;
+    this.trainPanel.style.display = 'none';
+    this.trainPanelVisible = false;
+  }
+  
+  private setupTrainPanel(
     armyRoster: HybridCreature[],
     resources: EconomyState,
     callbacks: {
@@ -410,7 +501,29 @@ export class UIManager {
   }
 
   public refreshTrainPanel(resources: EconomyState): void {
+    if (!this.trainPanelVisible) return;
     this.renderTrainPanel(resources);
+  }
+  
+  public updateHQHP(playerHQ: any, enemyHQ: any): void {
+    const playerHQBar = document.getElementById('player-hq-hp-bar');
+    const enemyHQBar = document.getElementById('enemy-hq-hp-bar');
+    
+    if (!playerHQBar || !enemyHQBar) return;
+    
+    const playerPercent = playerHQ.currentHp / playerHQ.maxHp;
+    const enemyPercent = enemyHQ.currentHp / enemyHQ.maxHp;
+    
+    const playerColor = colors.playerHex;
+    const enemyColor = colors.rivalHex;
+    
+    playerHQBar.innerHTML = `
+      <div style="width: ${playerPercent * 100}%; height: 100%; background: ${playerColor}; transition: width 0.3s;"></div>
+    `;
+    
+    enemyHQBar.innerHTML = `
+      <div style="width: ${enemyPercent * 100}%; height: 100%; background: ${enemyColor}; transition: width 0.3s;"></div>
+    `;
   }
 
   public updateSelection(selectedUnits: Unit3D[]): void {
@@ -536,5 +649,115 @@ export class UIManager {
     this.gameOverEl.appendChild(restartBtn);
     
     document.body.appendChild(this.gameOverEl);
+  }
+  
+  public toggleHelpOverlay(): void {
+    if (this.helpOverlay) {
+      this.closeHelpOverlay();
+    } else {
+      this.showHelpOverlay();
+    }
+  }
+  
+  public isHelpOverlayOpen(): boolean {
+    return this.helpOverlay !== null;
+  }
+  
+  public closeHelpOverlay(): void {
+    if (this.helpOverlay) {
+      document.body.removeChild(this.helpOverlay);
+      this.helpOverlay = null;
+    }
+  }
+  
+  private showHelpOverlay(): void {
+    if (this.helpOverlay) return;
+    
+    this.helpOverlay = document.createElement('div');
+    this.helpOverlay.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.95);
+      border: 2px solid ${colors.playerHex};
+      border-radius: 12px;
+      padding: 30px;
+      max-width: 600px;
+      z-index: 3000;
+      pointer-events: auto;
+    `;
+    
+    const title = document.createElement('div');
+    title.textContent = 'עזרה - בקרים'; // Help - Controls
+    title.style.cssText = `
+      font-size: 28px;
+      font-weight: bold;
+      color: ${colors.playerHex};
+      text-align: center;
+      margin-bottom: 20px;
+    `;
+    this.helpOverlay.appendChild(title);
+    
+    const controls = [
+      { key: 'WASD / חצים', action: 'הזז מצלמה' },
+      { key: 'גלגל עכבר', action: 'זום' },
+      { key: 'קצה מסך', action: 'הזז מצלמה אוטומטי' },
+      { key: 'לחיצה שמאלית', action: 'בחר יחידה' },
+      { key: 'גרירה שמאלית', action: 'בחר מרובע' },
+      { key: 'לחיצה ימנית', action: 'הזז / תקוף' },
+      { key: 'לחץ על בסיס שלך', action: 'הצג פאנל אימון' },
+      { key: 'רווח (Space)', action: 'מרכז על בחירה' },
+      { key: 'F1', action: 'עזרה' },
+      { key: 'Esc', action: 'סגור / בטל בחירה' }
+    ];
+    
+    for (const control of controls) {
+      const row = document.createElement('div');
+      row.style.cssText = `
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 12px;
+        gap: 20px;
+      `;
+      
+      const keyEl = document.createElement('span');
+      keyEl.textContent = control.key;
+      keyEl.style.cssText = `
+        color: #ffffff;
+        font-weight: bold;
+        font-size: 16px;
+      `;
+      
+      const actionEl = document.createElement('span');
+      actionEl.textContent = control.action;
+      actionEl.style.cssText = `
+        color: #cccccc;
+        font-size: 16px;
+      `;
+      
+      row.appendChild(keyEl);
+      row.appendChild(actionEl);
+      this.helpOverlay.appendChild(row);
+    }
+    
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = 'סגור (Esc)';
+    closeBtn.style.cssText = `
+      margin-top: 20px;
+      padding: 10px 30px;
+      background: ${colors.playerHex};
+      color: #000000;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+    `;
+    closeBtn.addEventListener('click', () => this.closeHelpOverlay());
+    this.helpOverlay.appendChild(closeBtn);
+    
+    document.body.appendChild(this.helpOverlay);
   }
 }

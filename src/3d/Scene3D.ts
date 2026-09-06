@@ -49,7 +49,7 @@ export class Scene3D {
       this.scene
     );
     
-    this.gameManager = new GameManager(this.scene, this.inputManager);
+    this.gameManager = new GameManager(this.scene, this.inputManager, this.camera);
 
     // Clock for delta time
     this.clock = new THREE.Clock();
