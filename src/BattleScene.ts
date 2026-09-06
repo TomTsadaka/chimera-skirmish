@@ -187,8 +187,9 @@ export class BattleScene extends Phaser.Scene {
       }
     });
 
+    const numberKeys = ['ZERO', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE'];
     for (let i = 0; i <= 9; i++) {
-      const keyCode = i === 0 ? 'ZERO' : String(i);
+      const keyCode = numberKeys[i];
       this.input.keyboard!.on(`keydown-${keyCode}`, (event: KeyboardEvent) => {
         if (event.ctrlKey && !this.gameEnded) {
           event.preventDefault();
