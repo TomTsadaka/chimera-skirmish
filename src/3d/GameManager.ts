@@ -9,6 +9,7 @@ import { RTSCamera } from './RTSCamera';
 import { HybridCreature, EconomyState, ResourceNode as ResourceNodeType, AnimalArchetype } from '../types';
 import { ANIMAL_ARCHETYPES, GameData } from '../GameData';
 import { GAME_CONSTANTS } from '../constants';
+import { strings } from '../i18n';
 
 export class GameManager {
   private scene: THREE.Scene;
@@ -103,6 +104,15 @@ export class GameManager {
           this.camera.setHelpOverlayOpen(false);
         } else {
           this.clearSelection();
+        }
+      }
+      
+      // Debug key K: force win modal (gated behind ?debug=1)
+      if (event.code === 'KeyK' && window.location.search.includes('debug=1')) {
+        event.preventDefault();
+        if (!this.gameEnded) {
+          this.gameEnded = true;
+          this.uiManager.showGameOver(true, strings.win.destroyBase);
         }
       }
     });
@@ -352,6 +362,18 @@ export class GameManager {
   private handleRightClick(worldPos: THREE.Vector3): void {
     if (this.selectedUnits.length === 0) return;
     
+    // Check for HQ click first (priority target)
+    const clickedHQ = this.getHQAtPosition(worldPos);
+    if (clickedHQ && clickedHQ === this.enemyHQ) {
+      // Attack enemy HQ!
+      const combatUnits = this.selectedUnits.filter(u => u.role === 'combat');
+      for (const unit of combatUnits) {
+        unit.targetEnemy = null; // Clear enemy unit target
+        unit.moveToPosition(this.enemyHQ.getPosition().x, this.enemyHQ.getPosition().z);
+      }
+      return;
+    }
+    
     // Check for resource node
     const clickedNode = this.getResourceNodeAtPosition(worldPos);
     if (clickedNode && !clickedNode.isEmpty()) {
@@ -362,15 +384,11 @@ export class GameManager {
       return;
     }
     
-    // Check for enemy unit or HQ
+    // Check for enemy unit or move command
     const targetUnit = this.getUnitAtPosition(worldPos);
-    const distanceToEnemyHQ = worldPos.distanceTo(this.enemyHQ.getPosition());
     
     for (const unit of this.selectedUnits) {
-      if (distanceToEnemyHQ < 6 && unit.role === 'combat') {
-        unit.moveToPosition(this.enemyHQ.x, this.enemyHQ.y);
-        unit.targetEnemy = null;
-      } else if (targetUnit && targetUnit.team === 'enemy') {
+      if (targetUnit && targetUnit.team === 'enemy') {
         unit.targetEnemy = targetUnit;
         unit.moveToPosition(targetUnit.getPosition().x, targetUnit.getPosition().z);
       } else {
@@ -687,10 +705,12 @@ export class GameManager {
   private checkGameEnd(): void {
     if (this.playerHQ.currentHp <= 0) {
       this.gameEnded = true;
-      this.uiManager.showGameOver(false, 'הבסיס שלך נהרס!');
+      console.log('[GameManager] Player HQ destroyed - showing lose modal');
+      this.uiManager.showGameOver(false, strings.lose.baseDown);
     } else if (this.enemyHQ.currentHp <= 0) {
       this.gameEnded = true;
-      this.uiManager.showGameOver(true, 'הרסת את בסיס האויב!');
+      console.log('[GameManager] Enemy HQ destroyed - showing win modal');
+      this.uiManager.showGameOver(true, strings.win.destroyBase);
     }
   }
 
