@@ -42,6 +42,7 @@ export const strings = {
     title: 'קיצורי מקלדת',
     openHint: 'עזרה',
     close: 'סגור',
+    closeHint: 'Esc לסגירה',
     keyWasd: 'WASD / חצים',
     actionWasd: 'הזזת מצלמה',
     keyZoom: 'גלגלת',

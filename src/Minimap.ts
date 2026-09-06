@@ -45,8 +45,18 @@ export class Minimap {
 
     this.container.add([this.bg, this.mapGraphics, this.viewportRect, this.label]);
 
+    // Make sure minimap clicks don't bubble to arena selection
     this.bg.setInteractive({ useHandCursor: true });
-    this.bg.on('pointerdown', this.onMinimapClick, this);
+    this.bg.on('pointerdown', (pointer: Phaser.Input.Pointer, event: Phaser.Types.Input.EventData) => {
+      event.stopPropagation(); // Prevent arena from processing this click
+      this.onMinimapClick(pointer);
+    });
+    
+    // Add visible border for clear hit area
+    const border = scene.add.rectangle(0, 0, this.MINIMAP_SIZE, this.MINIMAP_SIZE)
+      .setOrigin(0, 0)
+      .setStrokeStyle(2, 0x666666, 1);
+    this.container.add(border);
   }
 
   update(playerUnits: Unit[], enemyUnits: Unit[], camera: Phaser.Cameras.Scene2D.Camera): void {

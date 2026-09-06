@@ -99,27 +99,30 @@ export class BattleScene extends Phaser.Scene {
       fontSize: '32px',
       color: '#ffffff',
       fontStyle: 'bold',
-      fontFamily: 'Arial'
+      fontFamily: 'Arial',
+      shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
     }).setOrigin(0.5).setScrollFactor(0);
 
-    // Player label with background
+    // Player label with background and shadow
     this.add.rectangle(100, 68, 80, 28, 0x000000, 0.6).setOrigin(0, 0.5).setScrollFactor(0);
     this.add.text(100, 60, strings.deploy.you, {
       fontSize: '18px',
       color: colors.playerHex,
       fontStyle: 'bold',
-      fontFamily: 'Arial'
+      fontFamily: 'Arial',
+      shadow: { offsetX: 1, offsetY: 1, color: '#000000', blur: 3, fill: true }
     }).setScrollFactor(0);
 
     this.playerHPBar = this.add.graphics().setScrollFactor(0);
 
-    // Rival label with background
+    // Rival label with background and shadow
     this.add.rectangle(700, 68, 80, 28, 0x000000, 0.6).setOrigin(1, 0.5).setScrollFactor(0);
     this.add.text(700, 60, strings.deploy.rival, {
       fontSize: '18px',
       color: colors.rivalHex,
       fontStyle: 'bold',
-      fontFamily: 'Arial'
+      fontFamily: 'Arial',
+      shadow: { offsetX: 1, offsetY: 1, color: '#000000', blur: 3, fill: true }
     }).setOrigin(1, 0).setScrollFactor(0);
 
     this.rivalHPBar = this.add.graphics().setScrollFactor(0);
@@ -206,9 +209,11 @@ export class BattleScene extends Phaser.Scene {
 
     this.input.keyboard!.on('keydown-ESC', (event: KeyboardEvent) => {
       console.log('[DEBUG] ESC pressed, helpOverlay:', !!this.helpOverlay);
+      // Priority: Always close help first, then deselect
       if (this.helpOverlay) {
         event.preventDefault();
         this.closeHelpOverlay();
+        // Do NOT deselect when closing help
       } else if (!this.gameEnded) {
         this.clearSelection();
       }
@@ -830,6 +835,14 @@ export class BattleScene extends Phaser.Scene {
       fontFamily: 'Arial'
     }).setOrigin(0.5).setScrollFactor(0);
     this.helpOverlay.add(closeText);
+    
+    // Close hint below button
+    const closeHint = this.add.text(400, y + 28, strings.help.closeHint, {
+      fontSize: '12px',
+      color: '#999999',
+      fontFamily: 'Arial'
+    }).setOrigin(0.5, 0).setScrollFactor(0);
+    this.helpOverlay.add(closeHint);
 
     closeBtn.on('pointerdown', () => {
       this.closeHelpOverlay();
