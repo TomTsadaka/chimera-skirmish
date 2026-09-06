@@ -4,6 +4,7 @@ import { Unit } from './Unit';
 import { AI } from './AI';
 import { ANIMAL_ARCHETYPES, GameData } from './GameData';
 import { strings, colors } from './i18n';
+import { FogOfWar } from './FogOfWar';
 
 export class BattleScene extends Phaser.Scene {
   private playerUnits: Unit[] = [];
@@ -20,6 +21,19 @@ export class BattleScene extends Phaser.Scene {
   private selectedUnitText!: Phaser.GameObjects.Text;
   private selectedHPText!: Phaser.GameObjects.Text;
   private selectedHPBar!: Phaser.GameObjects.Graphics;
+  private fogOfWar!: FogOfWar;
+  private controlGroups: Map<number, Unit[]> = new Map();
+  private helpOverlay: Phaser.GameObjects.Container | null = null;
+  
+  private readonly MAP_WIDTH = 2400;
+  private readonly MAP_HEIGHT = 1800;
+  private readonly CAMERA_SPEED = 8;
+  private readonly EDGE_PAN_MARGIN = 20;
+  private readonly MIN_ZOOM = 0.5;
+  private readonly MAX_ZOOM = 1.5;
+
+  private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
+  private wasdKeys!: { w: Phaser.Input.Keyboard.Key; a: Phaser.Input.Keyboard.Key; s: Phaser.Input.Keyboard.Key; d: Phaser.Input.Keyboard.Key };
 
   constructor() {
     super({ key: 'BattleScene' });
@@ -29,52 +43,25 @@ export class BattleScene extends Phaser.Scene {
     this.gameEnded = false;
     
     this.registry.set('lastHybrid', data.hybrid);
+
+    this.add.rectangle(this.MAP_WIDTH / 2, this.MAP_HEIGHT / 2, this.MAP_WIDTH, this.MAP_HEIGHT, 0x1a3a1a);
     
-    this.add.text(400, 20, strings.battle.title, {
-      fontSize: '32px',
-      color: '#ffffff',
-      fontStyle: 'bold',
-      fontFamily: 'Arial'
-    }).setOrigin(0.5);
+    const cam = this.cameras.main;
+    cam.setBounds(0, 0, this.MAP_WIDTH, this.MAP_HEIGHT);
+    cam.setZoom(1);
 
-    this.add.text(100, 60, strings.deploy.you, {
-      fontSize: '18px',
-      color: colors.playerHex,
-      fontStyle: 'bold',
-      fontFamily: 'Arial'
-    });
-
-    this.playerHPBar = this.add.graphics();
-
-    this.add.text(700, 60, strings.deploy.rival, {
-      fontSize: '18px',
-      color: colors.rivalHex,
-      fontStyle: 'bold',
-      fontFamily: 'Arial'
-    }).setOrigin(1, 0);
-
-    this.rivalHPBar = this.add.graphics();
-
-    this.add.rectangle(400, 340, 700, 480, 0x1a3a1a, 0.3);
+    this.fogOfWar = new FogOfWar(this, this.MAP_WIDTH, this.MAP_HEIGHT);
 
     this.spawnPlayerArmy(data.hybrid);
     this.spawnEnemyArmy();
 
+    cam.centerOn(this.playerUnits[0].x, this.playerUnits[0].y);
+
     this.ai = new AI(this.enemyUnits, this.playerUnits);
 
-    this.input.on('pointerdown', this.onPointerDown, this);
-    this.input.on('pointermove', this.onPointerMove, this);
-    this.input.on('pointerup', this.onPointerUp, this);
-
-    this.input.keyboard!.on('keydown-A', (event: KeyboardEvent) => {
-      if (event.ctrlKey && !this.gameEnded) {
-        this.selectAllPlayerUnits();
-      }
-    });
-
-    this.input.mouse!.disableContextMenu();
-
-    this.createSelectedUnitPanel();
+    this.setupUI();
+    this.setupInput();
+    this.setupKeyboard();
 
     if (!this.onboardingShown) {
       this.time.delayedCall(500, () => {
@@ -83,17 +70,125 @@ export class BattleScene extends Phaser.Scene {
     }
   }
 
+  private setupUI(): void {
+    this.add.text(400, 20, strings.battle.title, {
+      fontSize: '32px',
+      color: '#ffffff',
+      fontStyle: 'bold',
+      fontFamily: 'Arial'
+    }).setOrigin(0.5).setScrollFactor(0);
+
+    this.add.text(100, 60, strings.deploy.you, {
+      fontSize: '18px',
+      color: colors.playerHex,
+      fontStyle: 'bold',
+      fontFamily: 'Arial'
+    }).setScrollFactor(0);
+
+    this.playerHPBar = this.add.graphics().setScrollFactor(0);
+
+    this.add.text(700, 60, strings.deploy.rival, {
+      fontSize: '18px',
+      color: colors.rivalHex,
+      fontStyle: 'bold',
+      fontFamily: 'Arial'
+    }).setOrigin(1, 0).setScrollFactor(0);
+
+    this.rivalHPBar = this.add.graphics().setScrollFactor(0);
+
+    this.createSelectedUnitPanel();
+  }
+
+  private setupInput(): void {
+    this.input.on('pointerdown', this.onPointerDown, this);
+    this.input.on('pointermove', this.onPointerMove, this);
+    this.input.on('pointerup', this.onPointerUp, this);
+
+    this.input.on('wheel', (_pointer: any, _gameObjects: any, _deltaX: number, deltaY: number) => {
+      if (this.gameEnded) return;
+      
+      const cam = this.cameras.main;
+      const newZoom = Phaser.Math.Clamp(cam.zoom - deltaY * 0.001, this.MIN_ZOOM, this.MAX_ZOOM);
+      cam.setZoom(newZoom);
+    });
+
+    this.input.mouse!.disableContextMenu();
+  }
+
+  private setupKeyboard(): void {
+    this.cursors = this.input.keyboard!.createCursorKeys();
+    this.wasdKeys = {
+      w: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.W),
+      a: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.A),
+      s: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.S),
+      d: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.D)
+    };
+
+    this.input.keyboard!.on('keydown-SPACE', () => {
+      if (!this.gameEnded && this.selectedUnits.length > 0) {
+        this.centerCameraOnSelection();
+      }
+    });
+
+    this.input.keyboard!.on('keydown-A', (event: KeyboardEvent) => {
+      if (event.ctrlKey && !this.gameEnded) {
+        this.selectAllPlayerUnits();
+      }
+    });
+
+    this.input.keyboard!.on('keydown-ESC', () => {
+      if (this.helpOverlay) {
+        this.closeHelpOverlay();
+      } else if (!this.gameEnded) {
+        this.clearSelection();
+      }
+    });
+
+    this.input.keyboard!.on('keydown-X', () => {
+      if (!this.gameEnded) this.stopSelectedUnits();
+    });
+
+    this.input.keyboard!.on('keydown-DELETE', () => {
+      if (!this.gameEnded) this.stopSelectedUnits();
+    });
+
+    this.input.keyboard!.on('keydown-BACK_SPACE', () => {
+      if (!this.gameEnded) this.stopSelectedUnits();
+    });
+
+    this.input.keyboard!.on('keydown-F1', () => {
+      this.toggleHelpOverlay();
+    });
+
+    this.input.keyboard!.on('keydown-SLASH', (event: KeyboardEvent) => {
+      if (event.shiftKey) {
+        this.toggleHelpOverlay();
+      }
+    });
+
+    for (let i = 0; i <= 9; i++) {
+      const keyCode = i === 0 ? 'ZERO' : String(i);
+      this.input.keyboard!.on(`keydown-${keyCode}`, (event: KeyboardEvent) => {
+        if (event.ctrlKey && !this.gameEnded) {
+          this.assignControlGroup(i);
+        } else if (!this.gameEnded) {
+          this.recallControlGroup(i);
+        }
+      });
+    }
+  }
+
   private spawnPlayerArmy(hybrid: HybridCreature): void {
     const unitCount = 8;
-    const startX = 150;
-    const startY = 300;
-    const spacing = 60;
+    const startX = 300;
+    const startY = this.MAP_HEIGHT / 2;
+    const spacing = 70;
 
     for (let i = 0; i < unitCount; i++) {
       const col = i % 4;
       const row = Math.floor(i / 4);
       const x = startX + col * spacing;
-      const y = startY + row * spacing;
+      const y = startY - 100 + row * spacing;
       
       const unit = new Unit(this, x, y, hybrid, 'player');
       this.playerUnits.push(unit);
@@ -103,12 +198,12 @@ export class BattleScene extends Phaser.Scene {
   private spawnEnemyArmy(): void {
     const enemyCount = Math.min(6, Math.max(3, this.playerUnits.length));
     const spawnPoints = [
-      { x: 650, y: 200 },
-      { x: 680, y: 250 },
-      { x: 650, y: 300 },
-      { x: 680, y: 350 },
-      { x: 650, y: 400 },
-      { x: 680, y: 450 }
+      { x: this.MAP_WIDTH - 400, y: this.MAP_HEIGHT / 2 - 200 },
+      { x: this.MAP_WIDTH - 350, y: this.MAP_HEIGHT / 2 - 100 },
+      { x: this.MAP_WIDTH - 400, y: this.MAP_HEIGHT / 2 },
+      { x: this.MAP_WIDTH - 350, y: this.MAP_HEIGHT / 2 + 100 },
+      { x: this.MAP_WIDTH - 400, y: this.MAP_HEIGHT / 2 + 200 },
+      { x: this.MAP_WIDTH - 450, y: this.MAP_HEIGHT / 2 + 300 }
     ];
 
     for (let i = 0; i < enemyCount; i++) {
@@ -171,12 +266,15 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private onPointerUp(pointer: Phaser.Input.Pointer): void {
-    if (this.gameEnded) return;
+    if (this.gameEnded || this.helpOverlay) return;
+    
+    const worldX = pointer.worldX;
+    const worldY = pointer.worldY;
     
     if (this.selectionBox && this.selectionStart) {
       const bounds = this.selectionBox.getBounds();
-      const boxWidth = Math.abs(pointer.x - this.selectionStart.x);
-      const boxHeight = Math.abs(pointer.y - this.selectionStart.y);
+      const boxWidth = Math.abs(worldX - this.selectionStart.x);
+      const boxHeight = Math.abs(worldY - this.selectionStart.y);
       
       if (boxWidth > 5 || boxHeight > 5) {
         if (!pointer.event.shiftKey) {
@@ -266,6 +364,10 @@ export class BattleScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
+    if (!this.gameEnded) {
+      this.updateCameraPan();
+    }
+
     this.playerUnits = this.playerUnits.filter(unit => {
       if (unit.currentHp <= 0) {
         unit.destroy();
@@ -283,6 +385,12 @@ export class BattleScene extends Phaser.Scene {
     });
     
     this.selectedUnits = this.selectedUnits.filter(unit => unit.currentHp > 0);
+
+    this.fogOfWar.update(this.playerUnits);
+
+    for (const enemy of this.enemyUnits) {
+      enemy.setVisible(this.fogOfWar.isVisible(enemy.x, enemy.y));
+    }
 
     for (const unit of [...this.playerUnits, ...this.enemyUnits]) {
       unit.update(delta);
@@ -327,6 +435,36 @@ export class BattleScene extends Phaser.Scene {
           this.scene.start('GameOverScene', { victory: true });
         });
       }
+    }
+  }
+
+  private updateCameraPan(): void {
+    const cam = this.cameras.main;
+    const pointer = this.input.activePointer;
+
+    if (this.cursors.left.isDown || this.wasdKeys.a.isDown) {
+      cam.scrollX -= this.CAMERA_SPEED;
+    }
+    if (this.cursors.right.isDown || this.wasdKeys.d.isDown) {
+      cam.scrollX += this.CAMERA_SPEED;
+    }
+    if (this.cursors.up.isDown || this.wasdKeys.w.isDown) {
+      cam.scrollY -= this.CAMERA_SPEED;
+    }
+    if (this.cursors.down.isDown || this.wasdKeys.s.isDown) {
+      cam.scrollY += this.CAMERA_SPEED;
+    }
+
+    if (pointer.x < this.EDGE_PAN_MARGIN) {
+      cam.scrollX -= this.CAMERA_SPEED;
+    } else if (pointer.x > this.scale.width - this.EDGE_PAN_MARGIN) {
+      cam.scrollX += this.CAMERA_SPEED;
+    }
+
+    if (pointer.y < this.EDGE_PAN_MARGIN) {
+      cam.scrollY -= this.CAMERA_SPEED;
+    } else if (pointer.y > this.scale.height - this.EDGE_PAN_MARGIN) {
+      cam.scrollY += this.CAMERA_SPEED;
     }
   }
 
@@ -416,6 +554,136 @@ export class BattleScene extends Phaser.Scene {
       this.selectedUnitText.setColor(colors.playerHex);
       this.selectedHPText.setText('');
       this.selectedHPBar.clear();
+    }
+  }
+
+  private centerCameraOnSelection(): void {
+    if (this.selectedUnits.length === 0) return;
+
+    const avgX = this.selectedUnits.reduce((sum, u) => sum + u.x, 0) / this.selectedUnits.length;
+    const avgY = this.selectedUnits.reduce((sum, u) => sum + u.y, 0) / this.selectedUnits.length;
+
+    this.cameras.main.pan(avgX, avgY, 500, 'Sine.easeInOut');
+  }
+
+  private stopSelectedUnits(): void {
+    for (const unit of this.selectedUnits) {
+      unit.targetEnemy = null;
+      this.tweens.killTweensOf(unit);
+    }
+  }
+
+  private assignControlGroup(groupNumber: number): void {
+    if (this.selectedUnits.length > 0) {
+      this.controlGroups.set(groupNumber, [...this.selectedUnits]);
+    }
+  }
+
+  private recallControlGroup(groupNumber: number): void {
+    const group = this.controlGroups.get(groupNumber);
+    if (!group) return;
+
+    this.clearSelection();
+    for (const unit of group) {
+      if (unit.currentHp > 0) {
+        unit.setSelected(true);
+        this.selectedUnits.push(unit);
+      }
+    }
+  }
+
+  private toggleHelpOverlay(): void {
+    if (this.helpOverlay) {
+      this.closeHelpOverlay();
+    } else {
+      this.showHelpOverlay();
+    }
+  }
+
+  private showHelpOverlay(): void {
+    this.add.rectangle(400, 300, 700, 550, 0x000000, 0.95).setScrollFactor(0);
+    
+    this.add.text(400, 80, strings.controls.title, {
+      fontSize: '32px',
+      color: '#ffffff',
+      fontStyle: 'bold',
+      fontFamily: 'Arial'
+    }).setOrigin(0.5).setScrollFactor(0);
+
+    let y = 130;
+    const leftX = 150;
+    const spacing = 30;
+
+    const addSection = (sectionTitle: string, items: string[]) => {
+      this.add.text(leftX, y, sectionTitle, {
+        fontSize: '20px',
+        color: colors.playerHex,
+        fontStyle: 'bold',
+        fontFamily: 'Arial'
+      }).setScrollFactor(0);
+      y += spacing;
+
+      items.forEach(item => {
+        this.add.text(leftX + 20, y, item, {
+          fontSize: '14px',
+          color: '#cccccc',
+          fontFamily: 'Arial'
+        }).setScrollFactor(0);
+        y += 22;
+      });
+      y += 10;
+    };
+
+    addSection(strings.controls.camera, [
+      strings.controls.cameraWASD,
+      strings.controls.cameraWheel,
+      strings.controls.cameraEdge
+    ]);
+
+    addSection(strings.controls.selection, [
+      strings.controls.selectionClick,
+      strings.controls.selectionBox,
+      strings.controls.selectionShift,
+      strings.controls.selectionCtrlA,
+      strings.controls.selectionSpace
+    ]);
+
+    addSection(strings.controls.commands, [
+      strings.controls.commandsMove,
+      strings.controls.commandsStop
+    ]);
+
+    addSection(strings.controls.controlGroups, [
+      strings.controls.controlGroupsAssign,
+      strings.controls.controlGroupsRecall
+    ]);
+
+    addSection(strings.controls.other, [
+      strings.controls.otherEsc,
+      strings.controls.otherHelp
+    ]);
+
+    const closeBtn = this.add.rectangle(400, 540, 150, 40, colors.player)
+      .setInteractive({ useHandCursor: true }).setScrollFactor(0);
+    this.add.text(400, 540, strings.controls.close, {
+      fontSize: '20px',
+      color: '#000000',
+      fontStyle: 'bold',
+      fontFamily: 'Arial'
+    }).setOrigin(0.5).setScrollFactor(0);
+
+    closeBtn.on('pointerdown', () => {
+      this.closeHelpOverlay();
+    });
+
+    this.helpOverlay = this.add.container(0, 0);
+    this.children.bringToTop(this.helpOverlay);
+  }
+
+  private closeHelpOverlay(): void {
+    if (this.helpOverlay) {
+      this.helpOverlay.destroy();
+      this.helpOverlay = null;
     }
   }
 

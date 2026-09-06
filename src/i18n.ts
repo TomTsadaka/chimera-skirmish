@@ -37,6 +37,29 @@ export const strings = {
     deploy: 'אתה משמאל (טורקיז), היריב מימין. לחץ התחל קרב.',
     battle: 'בחר יחידה והזז אותה בעכבר. עקוב אחרי סרגל החיים למעלה.',
     dismiss: 'הבנתי'
+  },
+  controls: {
+    title: 'בקרות המשחק',
+    camera: 'מצלמה',
+    cameraWASD: 'WASD / חצים - הזז מצלמה',
+    cameraWheel: 'גלגלת עכבר - זום',
+    cameraEdge: 'עכבר בקצה מסך - הזז מצלמה',
+    selection: 'בחירה',
+    selectionClick: 'קליק שמאלי - בחר יחידה',
+    selectionBox: 'גרירה - בחירה מרובה',
+    selectionShift: 'Shift+קליק - הוסף/הסר',
+    selectionCtrlA: 'Ctrl+A - בחר הכל',
+    selectionSpace: 'רווח - מרכז על בחירה',
+    commands: 'פקודות',
+    commandsMove: 'קליק ימני - הזז/תקוף',
+    commandsStop: 'X / Delete - עצור',
+    controlGroups: 'קבוצות בקרה',
+    controlGroupsAssign: 'Ctrl+1-0 - הקצה קבוצה',
+    controlGroupsRecall: '1-0 - קרא קבוצה',
+    other: 'אחר',
+    otherEsc: 'Esc - בטל בחירה',
+    otherHelp: 'F1 / ? - עזרה',
+    close: 'סגור'
   }
 };
 

@@ -75,12 +75,23 @@ The game will open automatically at `http://localhost:3000`
 #### 3. Battle (קרב)
 - **Your forces** (turquoise) spawn on the left - 8 units of your hybrid
 - **Enemy forces** (orange) spawn on the right - 3-6 random hybrids
+- **Large scrollable map** (2400×1800) with camera controls
+- **Fog of war**: Unexplored areas are dark; explored but not visible are darkened; currently visible areas are clear
+  - Player units reveal areas based on sight radius
+  - Scout units (Bat-Echo) have larger vision range
+  - Enemy units hidden when outside vision range
 - **HP bars** at the top show overall army health
   - Green: >50% HP
   - Yellow: 25-50% HP  
   - Red: <25% HP
 
-**Controls:**
+**Camera Controls:**
+- **WASD or Arrow Keys**: Pan camera
+- **Mouse Wheel**: Zoom in/out
+- **Mouse at Screen Edge**: Auto-pan camera
+- **Space**: Center camera on selected units
+
+**Selection:**
 - **Left-click unit**: Select single unit (clears previous)
 - **Left-click empty**: Deselect all
 - **Shift + Left-click**: Add/remove unit from selection
