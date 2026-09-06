@@ -40,6 +40,7 @@ export class BattleScene extends Phaser.Scene {
   private resourceNodes: ResourceNode[] = [];
   private resourceTexts: { biomass: Phaser.GameObjects.Text; dna: Phaser.GameObjects.Text } | null = null;
   private trainPanel: Phaser.GameObjects.Container | null = null;
+  private trainPanelUnits: Array<{ name: string; cost: { dna: number; biomass: number }; type: 'worker' | 'unit' | 'archetype'; hybrid?: HybridCreature; archetype?: AnimalArchetype }> = [];
   private dnaTrickleTimer: number = 0;
   private armyRoster: HybridCreature[] = [];
   private selectedUnitToTrain: HybridCreature | null = null;
@@ -255,6 +256,9 @@ export class BattleScene extends Phaser.Scene {
       }
     }
     
+    // Store unit data for refresh
+    this.trainPanelUnits = p0Units;
+    
     let yOffset = 50;
     for (let i = 0; i < p0Units.length; i++) {
       const unitData = p0Units[i];
@@ -264,7 +268,8 @@ export class BattleScene extends Phaser.Scene {
                        this.playerResources.biomass >= unitData.cost.biomass;
       
       const unitBtn = this.add.rectangle(panelX + panelWidth / 2, unitY, 160, 50, canAfford ? 0x2DD4BF : 0x666666, 0.8)
-        .setInteractive({ useHandCursor: canAfford }).setScrollFactor(0);
+        .setInteractive({ useHandCursor: canAfford }).setScrollFactor(0)
+        .setData('unitIndex', i);
       this.trainPanel.add(unitBtn);
       
       const unitName = this.add.text(panelX + panelWidth / 2, unitY - 10, unitData.name, {
@@ -272,32 +277,71 @@ export class BattleScene extends Phaser.Scene {
         color: canAfford ? '#ffffff' : '#888888',
         fontFamily: 'Arial',
         fontStyle: 'bold'
-      }).setOrigin(0.5).setScrollFactor(0);
+      }).setOrigin(0.5).setScrollFactor(0)
+        .setData('unitIndex', i);
       this.trainPanel.add(unitName);
       
       const unitCostText = this.add.text(panelX + panelWidth / 2, unitY + 10, `${unitData.cost.dna}D ${unitData.cost.biomass}B`, {
         fontSize: '11px',
         color: canAfford ? '#ffffff' : '#666666',
         fontFamily: 'Arial'
-      }).setOrigin(0.5).setScrollFactor(0);
+      }).setOrigin(0.5).setScrollFactor(0)
+        .setData('unitIndex', i);
       this.trainPanel.add(unitCostText);
       
-      if (canAfford) {
-        unitBtn.on('pointerdown', () => {
-          if (unitData.type === 'worker') {
-            this.trainWorker();
-          } else if (unitData.type === 'unit' && unitData.hybrid) {
-            this.selectedUnitToTrain = unitData.hybrid;
-            this.trainCombatUnit();
-          } else if (unitData.type === 'archetype' && unitData.archetype) {
-            this.trainArchetype(unitData.archetype);
-          }
-          // Refresh panel after training
-          this.trainPanel?.destroy();
-          this.createTrainPanel();
-        });
-      }
+      unitBtn.on('pointerdown', () => {
+        const affordable = this.playerResources.dna >= unitData.cost.dna && 
+                          this.playerResources.biomass >= unitData.cost.biomass;
+        if (!affordable) {
+          // Show "not enough resources" feedback
+          return;
+        }
+        
+        if (unitData.type === 'worker') {
+          this.trainWorker();
+        } else if (unitData.type === 'unit' && unitData.hybrid) {
+          this.selectedUnitToTrain = unitData.hybrid;
+          this.trainCombatUnit();
+        } else if (unitData.type === 'archetype' && unitData.archetype) {
+          this.trainArchetype(unitData.archetype);
+        }
+      });
     }
+  }
+  
+  private refreshTrainPanel(): void {
+    if (!this.trainPanel || !this.trainPanelUnits) return;
+    
+    const panelY = 150;
+    let yOffset = 50;
+    
+    // Update each button's affordability state
+    this.trainPanel.iterate((child: Phaser.GameObjects.GameObject) => {
+      if (!child.getData('unitIndex') && child.getData('unitIndex') !== 0) return;
+      
+      const idx = child.getData('unitIndex');
+      const unitData = this.trainPanelUnits[idx];
+      if (!unitData) return;
+      
+      const canAfford = this.playerResources.dna >= unitData.cost.dna && 
+                       this.playerResources.biomass >= unitData.cost.biomass;
+      
+      if (child instanceof Phaser.GameObjects.Rectangle) {
+        // Update button color and interactivity
+        child.setFillStyle(canAfford ? 0x2DD4BF : 0x666666, 0.8);
+        child.setInteractive({ useHandCursor: canAfford });
+      } else if (child instanceof Phaser.GameObjects.Text) {
+        // Update text color
+        const unitY = panelY + yOffset + idx * 60;
+        if (Math.abs(child.y - (unitY - 10)) < 1) {
+          // Name text
+          child.setColor(canAfford ? '#ffffff' : '#888888');
+        } else if (Math.abs(child.y - (unitY + 10)) < 1) {
+          // Cost text
+          child.setColor(canAfford ? '#ffffff' : '#666666');
+        }
+      }
+    });
   }
 
   private setupInput(): void {
@@ -589,6 +633,8 @@ export class BattleScene extends Phaser.Scene {
       this.resourceTexts.biomass.setText(`${strings.economy.biomass}: ${this.playerResources.biomass}`);
       this.resourceTexts.dna.setText(`${strings.economy.dna}: ${this.playerResources.dna}`);
     }
+    // Blocker 1 fix: Refresh train panel affordability whenever resources change
+    this.refreshTrainPanel();
   }
   
   private trainWorker(): void {
@@ -607,7 +653,30 @@ export class BattleScene extends Phaser.Scene {
       const workerCreature = this.createWorkerCreature();
       const worker = new Unit(this, x, y, workerCreature, 'player', 'worker', this.playerHQ);
       this.playerUnits.push(worker);
+      
+      // Nice-to-have: Auto-assign to nearest biomass node (like AI)
+      const nearestNode = this.findNearestResourceNode(worker);
+      if (nearestNode && !nearestNode.isEmpty()) {
+        worker.orderGather(nearestNode);
+      }
     }
+  }
+  
+  private findNearestResourceNode(worker: Unit): ResourceNode | null {
+    let nearest: ResourceNode | null = null;
+    let minDistance = Infinity;
+    
+    for (const node of this.resourceNodes) {
+      if (node.isEmpty()) continue;
+      
+      const distance = Phaser.Math.Distance.Between(worker.x, worker.y, node.x, node.y);
+      if (distance < minDistance) {
+        minDistance = distance;
+        nearest = node;
+      }
+    }
+    
+    return nearest;
   }
   
   private trainCombatUnit(): void {

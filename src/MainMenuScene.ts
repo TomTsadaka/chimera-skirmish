@@ -164,7 +164,7 @@ export class MainMenuScene extends Phaser.Scene {
     if (this.armyRoster.length > 0) {
       const deployBtn = this.add.rectangle(680, 550, 140, 40, 0xF97316)
         .setInteractive({ useHandCursor: true });
-      this.add.text(680, 550, 'לקרב', { 
+      this.add.text(680, 550, strings.zoo.cta, { 
         fontSize: '20px', 
         color: '#ffffff',
         fontStyle: 'bold',
