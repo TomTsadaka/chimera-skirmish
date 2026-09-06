@@ -65,10 +65,9 @@ export class BattleScene extends Phaser.Scene {
     this.add.rectangle(this.MAP_WIDTH / 2, this.MAP_HEIGHT / 2, this.MAP_WIDTH, this.MAP_HEIGHT, 0x1a3a1a);
     
     const cam = this.cameras.main;
-    const margin = GAME_CONSTANTS.CAMERA_MARGIN_PERCENT / 100;
-    const marginX = this.MAP_WIDTH * margin;
-    const marginY = this.MAP_HEIGHT * margin;
-    cam.setBounds(-marginX, -marginY, this.MAP_WIDTH + marginX * 2, this.MAP_HEIGHT + marginY * 2);
+    // Clamp camera to actual map area to prevent panning into black void
+    // Map goes from (0, 0) to (MAP_WIDTH, MAP_HEIGHT)
+    cam.setBounds(0, 0, this.MAP_WIDTH, this.MAP_HEIGHT);
     cam.setZoom(1);
 
     this.fogOfWar = new FogOfWar(this, this.MAP_WIDTH, this.MAP_HEIGHT);
@@ -186,6 +185,12 @@ export class BattleScene extends Phaser.Scene {
       s: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.S),
       d: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.D)
     };
+    
+    // Prevent WASD keys from bubbling to browser (prevents D key navigation, etc)
+    this.wasdKeys.w.on('down', (event: KeyboardEvent) => event.preventDefault());
+    this.wasdKeys.a.on('down', (event: KeyboardEvent) => event.preventDefault());
+    this.wasdKeys.s.on('down', (event: KeyboardEvent) => event.preventDefault());
+    this.wasdKeys.d.on('down', (event: KeyboardEvent) => event.preventDefault());
 
     this.input.keyboard!.on('keydown-SPACE', () => {
       if (!this.gameEnded && this.selectedUnits.length > 0) {
