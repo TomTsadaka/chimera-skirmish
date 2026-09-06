@@ -88,7 +88,8 @@ The game will open automatically at `http://localhost:3000`
 **Camera Controls:**
 - **WASD or Arrow Keys**: Pan camera
 - **Mouse Wheel**: Zoom in/out
-- **Mouse at Screen Edge**: Auto-pan camera
+- **Mouse at Screen Edge** (2-3% margin): Auto-pan camera (disabled when pointer leaves window)
+- **Minimap**: Click to jump camera to location
 - **Space**: Center camera on selected units
 
 **Selection:**
@@ -101,8 +102,17 @@ The game will open automatically at `http://localhost:3000`
 **Commands:**
 - **Right-click ground**: Move selected units to location
 - **Right-click enemy**: Attack target with selected units
+- **X / Delete / Backspace**: Stop selected units
 - Units automatically engage nearby enemies
 - Units retarget to nearest enemy when current target dies
+
+**Control Groups:**
+- **Ctrl + 1-0**: Assign selected units to control group
+- **1-0**: Recall control group
+
+**Other Shortcuts:**
+- **Esc**: Deselect units / Close help overlay
+- **F1 or ?**: Show Hebrew controls help overlay
 - Visual feedback: Green selection ring + HP bar on selected units
 - Click marker shows where orders were issued
 
@@ -147,11 +157,16 @@ This is a minimal viable prototype focusing on core mechanics:
 - Creature DNA mixing with stat blending (design-locked formula)
 - 8 original animal archetypes with Hebrew names
 - Simplified flow: Forge → Deploy → Battle
+- **Large scrollable map** (2400×1800) with camera controls
+- **Fog of war** with unit-based vision
 - Real-time unit movement and combat
+- **Full PC keyboard shortcuts** (WASD, control groups, hotkeys)
+- **Zoom and pan** camera system
 - Basic AI opponent with aggro/leash behavior
 - Win/lose conditions
 - Procedurally generated unit visuals
 - Hebrew RTL UI with onboarding tips
+- **Help overlay** (F1 or ?) with complete controls in Hebrew
 
 ❌ **Out of Scope:**
 - Multiple hybrid army compositions

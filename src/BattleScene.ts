@@ -5,6 +5,7 @@ import { AI } from './AI';
 import { ANIMAL_ARCHETYPES, GameData } from './GameData';
 import { strings, colors } from './i18n';
 import { FogOfWar } from './FogOfWar';
+import { Minimap } from './Minimap';
 
 export class BattleScene extends Phaser.Scene {
   private playerUnits: Unit[] = [];
@@ -22,13 +23,14 @@ export class BattleScene extends Phaser.Scene {
   private selectedHPText!: Phaser.GameObjects.Text;
   private selectedHPBar!: Phaser.GameObjects.Graphics;
   private fogOfWar!: FogOfWar;
+  private minimap!: Minimap;
   private controlGroups: Map<number, Unit[]> = new Map();
   private helpOverlay: Phaser.GameObjects.Container | null = null;
+  private pointerInWindow: boolean = true;
   
   private readonly MAP_WIDTH = 2400;
   private readonly MAP_HEIGHT = 1800;
   private readonly CAMERA_SPEED = 8;
-  private readonly EDGE_PAN_MARGIN = 20;
   private readonly MIN_ZOOM = 0.5;
   private readonly MAX_ZOOM = 1.5;
 
@@ -56,6 +58,8 @@ export class BattleScene extends Phaser.Scene {
     this.spawnEnemyArmy();
 
     cam.centerOn(this.playerUnits[0].x, this.playerUnits[0].y);
+
+    this.minimap = new Minimap(this, this.MAP_WIDTH, this.MAP_HEIGHT);
 
     this.ai = new AI(this.enemyUnits, this.playerUnits);
 
@@ -103,6 +107,22 @@ export class BattleScene extends Phaser.Scene {
     this.input.on('pointerdown', this.onPointerDown, this);
     this.input.on('pointermove', this.onPointerMove, this);
     this.input.on('pointerup', this.onPointerUp, this);
+
+    this.game.events.on('blur', () => {
+      this.pointerInWindow = false;
+    });
+
+    this.game.events.on('focus', () => {
+      this.pointerInWindow = true;
+    });
+
+    this.input.on('pointerout', () => {
+      this.pointerInWindow = false;
+    });
+
+    this.input.on('pointerover', () => {
+      this.pointerInWindow = true;
+    });
 
     this.input.on('wheel', (_pointer: any, _gameObjects: any, _deltaX: number, deltaY: number) => {
       if (this.gameEnded) return;
@@ -388,6 +408,8 @@ export class BattleScene extends Phaser.Scene {
 
     this.fogOfWar.update(this.playerUnits);
 
+    this.minimap.update(this.playerUnits, this.enemyUnits, this.cameras.main);
+
     for (const enemy of this.enemyUnits) {
       enemy.setVisible(this.fogOfWar.isVisible(enemy.x, enemy.y));
     }
@@ -455,16 +477,21 @@ export class BattleScene extends Phaser.Scene {
       cam.scrollY += this.CAMERA_SPEED;
     }
 
-    if (pointer.x < this.EDGE_PAN_MARGIN) {
-      cam.scrollX -= this.CAMERA_SPEED;
-    } else if (pointer.x > this.scale.width - this.EDGE_PAN_MARGIN) {
-      cam.scrollX += this.CAMERA_SPEED;
-    }
+    if (this.pointerInWindow && !this.helpOverlay) {
+      const edgePercent = 0.025;
+      const edgeThreshold = this.scale.width * edgePercent;
 
-    if (pointer.y < this.EDGE_PAN_MARGIN) {
-      cam.scrollY -= this.CAMERA_SPEED;
-    } else if (pointer.y > this.scale.height - this.EDGE_PAN_MARGIN) {
-      cam.scrollY += this.CAMERA_SPEED;
+      if (pointer.x < edgeThreshold) {
+        cam.scrollX -= this.CAMERA_SPEED;
+      } else if (pointer.x > this.scale.width - edgeThreshold) {
+        cam.scrollX += this.CAMERA_SPEED;
+      }
+
+      if (pointer.y < edgeThreshold) {
+        cam.scrollY -= this.CAMERA_SPEED;
+      } else if (pointer.y > this.scale.height - edgeThreshold) {
+        cam.scrollY += this.CAMERA_SPEED;
+      }
     }
   }
 
@@ -637,7 +664,8 @@ export class BattleScene extends Phaser.Scene {
     addSection(strings.controls.camera, [
       strings.controls.cameraWASD,
       strings.controls.cameraWheel,
-      strings.controls.cameraEdge
+      strings.controls.cameraEdge,
+      strings.controls.cameraMinimap
     ]);
 
     addSection(strings.controls.selection, [

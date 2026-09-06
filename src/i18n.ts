@@ -44,6 +44,7 @@ export const strings = {
     cameraWASD: 'WASD / חצים - הזז מצלמה',
     cameraWheel: 'גלגלת עכבר - זום',
     cameraEdge: 'עכבר בקצה מסך - הזז מצלמה',
+    cameraMinimap: 'קליק על מפה קטנה - קפיצה למיקום',
     selection: 'בחירה',
     selectionClick: 'קליק שמאלי - בחר יחידה',
     selectionBox: 'גרירה - בחירה מרובה',
