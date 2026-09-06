@@ -69,13 +69,20 @@ export class Minimap {
   }
 
   private onMinimapClick(pointer: Phaser.Input.Pointer): void {
-    const localX = pointer.x - this.MINIMAP_X;
-    const localY = pointer.y - this.MINIMAP_Y;
+    const cam = this.scene.cameras.main;
+    const screenX = pointer.x - cam.worldView.x;
+    const screenY = pointer.y - cam.worldView.y;
+    
+    const localX = screenX - this.MINIMAP_X;
+    const localY = screenY - this.MINIMAP_Y;
+
+    if (localX < 0 || localX > this.MINIMAP_WIDTH || localY < 0 || localY > this.MINIMAP_HEIGHT) {
+      return;
+    }
 
     const worldX = localX / this.scaleX;
     const worldY = localY / this.scaleY;
 
-    const cam = this.scene.cameras.main;
     cam.pan(worldX, worldY, 300, 'Sine.easeOut');
   }
 

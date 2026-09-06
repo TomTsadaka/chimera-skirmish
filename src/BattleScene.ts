@@ -176,7 +176,8 @@ export class BattleScene extends Phaser.Scene {
       if (!this.gameEnded) this.stopSelectedUnits();
     });
 
-    this.input.keyboard!.on('keydown-F1', () => {
+    this.input.keyboard!.on('keydown-F1', (event: KeyboardEvent) => {
+      event.preventDefault();
       this.toggleHelpOverlay();
     });
 
@@ -628,34 +629,40 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private showHelpOverlay(): void {
-    this.add.rectangle(400, 300, 700, 550, 0x000000, 0.95).setScrollFactor(0);
+    this.helpOverlay = this.add.container(0, 0).setDepth(10000);
     
-    this.add.text(400, 80, strings.controls.title, {
+    const bg = this.add.rectangle(400, 300, 700, 550, 0x000000, 0.95).setScrollFactor(0);
+    this.helpOverlay.add(bg);
+    
+    const title = this.add.text(400, 80, strings.controls.title, {
       fontSize: '32px',
       color: '#ffffff',
       fontStyle: 'bold',
       fontFamily: 'Arial'
     }).setOrigin(0.5).setScrollFactor(0);
+    this.helpOverlay.add(title);
 
     let y = 130;
     const leftX = 150;
     const spacing = 30;
 
     const addSection = (sectionTitle: string, items: string[]) => {
-      this.add.text(leftX, y, sectionTitle, {
+      const sectionText = this.add.text(leftX, y, sectionTitle, {
         fontSize: '20px',
         color: colors.playerHex,
         fontStyle: 'bold',
         fontFamily: 'Arial'
       }).setScrollFactor(0);
+      this.helpOverlay!.add(sectionText);
       y += spacing;
 
       items.forEach(item => {
-        this.add.text(leftX + 20, y, item, {
+        const itemText = this.add.text(leftX + 20, y, item, {
           fontSize: '14px',
           color: '#cccccc',
           fontFamily: 'Arial'
         }).setScrollFactor(0);
+        this.helpOverlay!.add(itemText);
         y += 22;
       });
       y += 10;
@@ -693,19 +700,19 @@ export class BattleScene extends Phaser.Scene {
 
     const closeBtn = this.add.rectangle(400, 540, 150, 40, colors.player)
       .setInteractive({ useHandCursor: true }).setScrollFactor(0);
-    this.add.text(400, 540, strings.controls.close, {
+    this.helpOverlay.add(closeBtn);
+    
+    const closeText = this.add.text(400, 540, strings.controls.close, {
       fontSize: '20px',
       color: '#000000',
       fontStyle: 'bold',
       fontFamily: 'Arial'
     }).setOrigin(0.5).setScrollFactor(0);
+    this.helpOverlay.add(closeText);
 
     closeBtn.on('pointerdown', () => {
       this.closeHelpOverlay();
     });
-
-    this.helpOverlay = this.add.container(0, 0);
-    this.children.bringToTop(this.helpOverlay);
   }
 
   private closeHelpOverlay(): void {

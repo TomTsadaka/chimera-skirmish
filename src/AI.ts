@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 import { Unit } from './Unit';
 
 export class AI {
