@@ -649,6 +649,15 @@ export class UIManager {
       pointer-events: auto;
     `;
     
+    // Prevent Esc from dismissing
+    const preventEsc = (e: KeyboardEvent) => {
+      if (e.code === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    this.gameOverEl.addEventListener('keydown', preventEsc, true);
+    
     const titleEl = document.createElement('div');
     titleEl.textContent = victory ? strings.win.title : strings.lose.title;
     titleEl.style.cssText = `
@@ -669,9 +678,17 @@ export class UIManager {
     `;
     this.gameOverEl.appendChild(messageEl);
     
-    const restartBtn = document.createElement('button');
-    restartBtn.textContent = 'רענן את הדף לשחק שוב';
-    restartBtn.style.cssText = `
+    // Button container
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.cssText = `
+      display: flex;
+      gap: 20px;
+    `;
+    
+    // "Another Battle" button
+    const anotherBtn = document.createElement('button');
+    anotherBtn.textContent = strings.gameOver.anotherBattle;
+    anotherBtn.style.cssText = `
       padding: 15px 30px;
       font-size: 18px;
       font-weight: bold;
@@ -682,16 +699,49 @@ export class UIManager {
       cursor: pointer;
       transition: all 0.2s;
     `;
-    restartBtn.addEventListener('mouseenter', () => {
-      restartBtn.style.transform = 'scale(1.1)';
+    anotherBtn.addEventListener('mouseenter', () => {
+      anotherBtn.style.transform = 'scale(1.1)';
     });
-    restartBtn.addEventListener('mouseleave', () => {
-      restartBtn.style.transform = 'scale(1)';
+    anotherBtn.addEventListener('mouseleave', () => {
+      anotherBtn.style.transform = 'scale(1)';
     });
-    restartBtn.addEventListener('click', () => {
+    anotherBtn.addEventListener('click', () => {
       window.location.reload();
     });
-    this.gameOverEl.appendChild(restartBtn);
+    buttonContainer.appendChild(anotherBtn);
+    
+    // "Back to Cage" button
+    const backBtn = document.createElement('button');
+    backBtn.textContent = strings.gameOver.backToCage;
+    backBtn.style.cssText = `
+      padding: 15px 30px;
+      font-size: 18px;
+      font-weight: bold;
+      background: #64748B;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    `;
+    backBtn.addEventListener('mouseenter', () => {
+      backBtn.style.transform = 'scale(1.1)';
+    });
+    backBtn.addEventListener('mouseleave', () => {
+      backBtn.style.transform = 'scale(1)';
+    });
+    backBtn.addEventListener('click', () => {
+      // For MVP, just reload - in full game would navigate to cage/menu
+      window.location.reload();
+    });
+    buttonContainer.appendChild(backBtn);
+    
+    this.gameOverEl.appendChild(buttonContainer);
+    
+    // Hide HUD elements behind modal
+    if (this.container) {
+      this.container.style.zIndex = '100';
+    }
     
     document.body.appendChild(this.gameOverEl);
   }

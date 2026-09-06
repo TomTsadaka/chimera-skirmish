@@ -111,6 +111,10 @@ export const strings = {
     baseDown: 'הבסיס שלך נהרס',
     title: 'הפסד'
   },
+  gameOver: {
+    anotherBattle: 'קרב נוסף',
+    backToCage: 'חזרה לכלוב'
+  },
   economy: {
     biomass: 'ביומסה',
     biomassEn: 'Biomass',
