@@ -306,7 +306,8 @@ export class GameManager {
       secondaryColor: '#854D0E',
       costDNA: 0,
       costBiomass: 0,
-      size: 3
+      size: 3,
+      researchTier: 1 // Workers are tier 1
     };
   }
 
@@ -601,7 +602,8 @@ export class GameManager {
         secondaryColor: archetype.secondaryColor,
         costDNA: archetype.costDNA,
         costBiomass: archetype.costBiomass,
-        size: archetype.size
+        size: archetype.size,
+        researchTier: archetype.researchTier
       };
       
       const angle = Math.random() * Math.PI * 2;

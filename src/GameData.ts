@@ -59,8 +59,9 @@ export class GameData {
     const costDNA = Math.round((parent1.costDNA + parent2.costDNA) * 0.85);
     const costBiomass = Math.round((parent1.costBiomass + parent2.costBiomass) * 0.5);
     
-    // Size is max of parents
+    // Size and tier are max of parents (per meta-size-tier.json)
     const size = Math.max(parent1.size, parent2.size);
+    const researchTier = Math.max(parent1.researchTier, parent2.researchTier);
     
     return {
       id: `hybrid_${parent1.id}_${parent2.id}_${Date.now()}`,
@@ -78,7 +79,8 @@ export class GameData {
       secondaryColor: parent2.primaryColor,
       costDNA,
       costBiomass,
-      size
+      size,
+      researchTier
     };
   }
 

@@ -34,6 +34,7 @@ export interface HybridCreature {
   costDNA: number;
   costBiomass: number;
   size: number; // max(parent1.size, parent2.size)
+  researchTier: number; // max(parent1.researchTier, parent2.researchTier)
 }
 
 export interface ArmySlot {
