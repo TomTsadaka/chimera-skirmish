@@ -1,0 +1,1692 @@
+[
+  {
+    "id": "echo-bat",
+    "nameHe": "עטלף-הד",
+    "nameEn": "Echo Bat",
+    "tags": [
+      "scout"
+    ],
+    "hp": 50,
+    "speed": 9,
+    "attack": 10,
+    "range": 1,
+    "special": "חשיפת ערפל באזור",
+    "specialEn": "Fog reveal in area",
+    "dnaCost": 40,
+    "biomassCost": 20
+  },
+  {
+    "id": "basalt-rhino",
+    "nameHe": "קרנף-בזלת",
+    "nameEn": "Basalt Rhino",
+    "tags": [
+      "tank"
+    ],
+    "hp": 180,
+    "speed": 3,
+    "attack": 18,
+    "range": 1,
+    "special": "מגן ודחיפה קדימה",
+    "specialEn": "Shield shove forward",
+    "dnaCost": 100,
+    "biomassCost": 60
+  },
+  {
+    "id": "quill-serpent",
+    "nameHe": "נחש-זיפים",
+    "nameEn": "Quill Serpent",
+    "tags": [
+      "assassin"
+    ],
+    "hp": 55,
+    "speed": 8,
+    "attack": 28,
+    "range": 1,
+    "special": "רעל נזק לאורך זמן",
+    "specialEn": "Poison damage over time",
+    "dnaCost": 70,
+    "biomassCost": 25
+  },
+  {
+    "id": "vinegar-eagle",
+    "nameHe": "עיט-חומץ",
+    "nameEn": "Vinegar Eagle",
+    "tags": [
+      "ranged",
+      "flyer"
+    ],
+    "hp": 70,
+    "speed": 8,
+    "attack": 16,
+    "range": 4,
+    "special": "צלילה מהירה פגיעה",
+    "specialEn": "Dive strike burst",
+    "dnaCost": 80,
+    "biomassCost": 40
+  },
+  {
+    "id": "crystal-crab",
+    "nameHe": "סרטן-גביש",
+    "nameEn": "Crystal Crab",
+    "tags": [
+      "tank"
+    ],
+    "hp": 160,
+    "speed": 2,
+    "attack": 12,
+    "range": 1,
+    "special": "שריון מחזיר נזק",
+    "specialEn": "Armor reflect damage",
+    "dnaCost": 85,
+    "biomassCost": 50
+  },
+  {
+    "id": "ink-octopus",
+    "nameHe": "תמנון-דיו",
+    "nameEn": "Ink Octopus",
+    "tags": [
+      "control",
+      "aquatic"
+    ],
+    "hp": 90,
+    "speed": 4,
+    "attack": 11,
+    "range": 3,
+    "special": "דיו מאט אויבים",
+    "specialEn": "Ink slows enemies",
+    "dnaCost": 65,
+    "biomassCost": 35
+  },
+  {
+    "id": "horn-stag",
+    "nameHe": "צבי-קרן",
+    "nameEn": "Horn Stag",
+    "tags": [
+      "skirmish"
+    ],
+    "hp": 85,
+    "speed": 7,
+    "attack": 20,
+    "range": 2,
+    "special": "נגיחה ודחיפה",
+    "specialEn": "Ram shove knockback",
+    "dnaCost": 55,
+    "biomassCost": 30
+  },
+  {
+    "id": "thunder-frog",
+    "nameHe": "צפרדע-רעם",
+    "nameEn": "Thunder Frog",
+    "tags": [
+      "artillery"
+    ],
+    "hp": 60,
+    "speed": 3,
+    "attack": 32,
+    "range": 5,
+    "special": "קפיצת הלם שטחית",
+    "specialEn": "Shock hop area blast",
+    "dnaCost": 90,
+    "biomassCost": 45
+  },
+  {
+    "id": "ember-moth",
+    "nameHe": "עש-גחלת",
+    "nameEn": "Ember Moth",
+    "tags": [
+      "swarm",
+      "flyer"
+    ],
+    "hp": 45,
+    "speed": 8,
+    "attack": 9,
+    "range": 1,
+    "special": "להבות קטנות בעדר",
+    "specialEn": "Tiny flames in swarm",
+    "dnaCost": 35,
+    "biomassCost": 18
+  },
+  {
+    "id": "glass-mole",
+    "nameHe": "חפרפרת-זכוכית",
+    "nameEn": "Glass Mole",
+    "tags": [
+      "burrower",
+      "scout"
+    ],
+    "hp": 55,
+    "speed": 6,
+    "attack": 12,
+    "range": 1,
+    "special": "חפירה שקופה מהירה",
+    "specialEn": "Fast translucent burrow",
+    "dnaCost": 45,
+    "biomassCost": 22
+  },
+  {
+    "id": "moss-boar",
+    "nameHe": "חזיר-טחב",
+    "nameEn": "Moss Boar",
+    "tags": [
+      "tank",
+      "skirmish"
+    ],
+    "hp": 140,
+    "speed": 4,
+    "attack": 17,
+    "range": 1,
+    "special": "מגן טחב מתחדש",
+    "specialEn": "Regen moss shield",
+    "dnaCost": 75,
+    "biomassCost": 48
+  },
+  {
+    "id": "silk-spider",
+    "nameHe": "עכביש-משי",
+    "nameEn": "Silk Spider",
+    "tags": [
+      "control",
+      "assassin"
+    ],
+    "hp": 60,
+    "speed": 7,
+    "attack": 15,
+    "range": 2,
+    "special": "רשת מאטה יעד",
+    "specialEn": "Web slows target",
+    "dnaCost": 60,
+    "biomassCost": 28
+  },
+  {
+    "id": "salt-ray",
+    "nameHe": "טריגון-מלח",
+    "nameEn": "Salt Ray",
+    "tags": [
+      "aquatic",
+      "ranged"
+    ],
+    "hp": 75,
+    "speed": 5,
+    "attack": 14,
+    "range": 3,
+    "special": "זרם מלח שורף",
+    "specialEn": "Salt spray burn",
+    "dnaCost": 58,
+    "biomassCost": 32
+  },
+  {
+    "id": "cinder-hare",
+    "nameHe": "ארנב-אפר",
+    "nameEn": "Cinder Hare",
+    "tags": [
+      "scout",
+      "skirmish"
+    ],
+    "hp": 48,
+    "speed": 10,
+    "attack": 11,
+    "range": 1,
+    "special": "שביל אפר מסתיר",
+    "specialEn": "Ash trail cloaks",
+    "dnaCost": 42,
+    "biomassCost": 20
+  },
+  {
+    "id": "iron-toad",
+    "nameHe": "קרפדה-ברזל",
+    "nameEn": "Iron Toad",
+    "tags": [
+      "tank",
+      "artillery"
+    ],
+    "hp": 150,
+    "speed": 2,
+    "attack": 22,
+    "range": 3,
+    "special": "יריקת מתכת כבדה",
+    "specialEn": "Heavy metal spit",
+    "dnaCost": 95,
+    "biomassCost": 55
+  },
+  {
+    "id": "whisper-owl",
+    "nameHe": "ינשוף-לחישה",
+    "nameEn": "Whisper Owl",
+    "tags": [
+      "scout",
+      "flyer"
+    ],
+    "hp": 52,
+    "speed": 8,
+    "attack": 13,
+    "range": 2,
+    "special": "שתיקה מסתירה יחידה",
+    "specialEn": "Silence cloaks unit",
+    "dnaCost": 50,
+    "biomassCost": 25
+  },
+  {
+    "id": "razor-urchin",
+    "nameHe": "קיפוד-ים-להב",
+    "nameEn": "Razor Urchin",
+    "tags": [
+      "aquatic",
+      "swarm"
+    ],
+    "hp": 70,
+    "speed": 3,
+    "attack": 16,
+    "range": 1,
+    "special": "קוצים פוגעים במגע",
+    "specialEn": "Spikes hurt on touch",
+    "dnaCost": 55,
+    "biomassCost": 30
+  },
+  {
+    "id": "spore-badger",
+    "nameHe": "גירית-נבגים",
+    "nameEn": "Spore Badger",
+    "tags": [
+      "support",
+      "burrower"
+    ],
+    "hp": 80,
+    "speed": 5,
+    "attack": 14,
+    "range": 1,
+    "special": "נבגים מרפאים בעלות",
+    "specialEn": "Spores heal allies",
+    "dnaCost": 62,
+    "biomassCost": 34
+  },
+  {
+    "id": "frost-lynx",
+    "nameHe": "שונר-כפור",
+    "nameEn": "Frost Lynx",
+    "tags": [
+      "assassin",
+      "skirmish"
+    ],
+    "hp": 65,
+    "speed": 9,
+    "attack": 24,
+    "range": 1,
+    "special": "נשיכת כפור מאטה",
+    "specialEn": "Frost bite slows",
+    "dnaCost": 72,
+    "biomassCost": 28
+  },
+  {
+    "id": "magma-turtle",
+    "nameHe": "צב-מגמה",
+    "nameEn": "Magma Turtle",
+    "tags": [
+      "tank"
+    ],
+    "hp": 190,
+    "speed": 2,
+    "attack": 15,
+    "range": 1,
+    "special": "שריון לוהט שורף",
+    "specialEn": "Hot shell burns foes",
+    "dnaCost": 110,
+    "biomassCost": 65
+  },
+  {
+    "id": "gale-finch",
+    "nameHe": "פרוש-סופה",
+    "nameEn": "Gale Finch",
+    "tags": [
+      "flyer",
+      "scout"
+    ],
+    "hp": 40,
+    "speed": 10,
+    "attack": 8,
+    "range": 1,
+    "special": "רוח דוחפת קלות",
+    "specialEn": "Gust light knockback",
+    "dnaCost": 38,
+    "biomassCost": 16
+  },
+  {
+    "id": "thorn-camel",
+    "nameHe": "גמל-קוצים",
+    "nameEn": "Thorn Camel",
+    "tags": [
+      "skirmish",
+      "support"
+    ],
+    "hp": 100,
+    "speed": 5,
+    "attack": 16,
+    "range": 2,
+    "special": "קוצים מגנים על בעלות",
+    "specialEn": "Thorns shield allies",
+    "dnaCost": 68,
+    "biomassCost": 38
+  },
+  {
+    "id": "void-leech",
+    "nameHe": "עלוקה-ריק",
+    "nameEn": "Void Leech",
+    "tags": [
+      "assassin",
+      "aquatic"
+    ],
+    "hp": 50,
+    "speed": 6,
+    "attack": 20,
+    "range": 1,
+    "special": "גניבת חיים מיעד",
+    "specialEn": "Steal life from target",
+    "dnaCost": 66,
+    "biomassCost": 26
+  },
+  {
+    "id": "pulse-jellyfish",
+    "nameHe": "מדוזה-פעימה",
+    "nameEn": "Pulse Jellyfish",
+    "tags": [
+      "control",
+      "aquatic"
+    ],
+    "hp": 70,
+    "speed": 3,
+    "attack": 10,
+    "range": 3,
+    "special": "הלם משבית זמנית",
+    "specialEn": "Pulse stun briefly",
+    "dnaCost": 64,
+    "biomassCost": 33
+  },
+  {
+    "id": "shard-goat",
+    "nameHe": "עז-רסיס",
+    "nameEn": "Shard Goat",
+    "tags": [
+      "skirmish"
+    ],
+    "hp": 90,
+    "speed": 7,
+    "attack": 19,
+    "range": 1,
+    "special": "ניפוץ שריון קל",
+    "specialEn": "Armor shatter light",
+    "dnaCost": 58,
+    "biomassCost": 31
+  },
+  {
+    "id": "dusk-vulture",
+    "nameHe": "נשר-דמדומים",
+    "nameEn": "Dusk Vulture",
+    "tags": [
+      "flyer",
+      "ranged"
+    ],
+    "hp": 68,
+    "speed": 7,
+    "attack": 15,
+    "range": 3,
+    "special": "צלילת דמדומים",
+    "specialEn": "Dusk dive strike",
+    "dnaCost": 70,
+    "biomassCost": 36
+  },
+  {
+    "id": "root-boar",
+    "nameHe": "חזיר-שורשים",
+    "nameEn": "Root Boar",
+    "tags": [
+      "burrower",
+      "tank"
+    ],
+    "hp": 135,
+    "speed": 4,
+    "attack": 18,
+    "range": 1,
+    "special": "שורשים עוצרים אויב",
+    "specialEn": "Roots snare enemy",
+    "dnaCost": 82,
+    "biomassCost": 47
+  },
+  {
+    "id": "spark-newt",
+    "nameHe": "טריטון-ניצוץ",
+    "nameEn": "Spark Newt",
+    "tags": [
+      "artillery",
+      "support"
+    ],
+    "hp": 55,
+    "speed": 4,
+    "attack": 26,
+    "range": 4,
+    "special": "קשת ניצוצות שטחית",
+    "specialEn": "Spark arc area hit",
+    "dnaCost": 78,
+    "biomassCost": 35
+  },
+  {
+    "id": "mirror-gecko",
+    "nameHe": "שממית-מראה",
+    "nameEn": "Mirror Gecko",
+    "tags": [
+      "scout",
+      "control"
+    ],
+    "hp": 48,
+    "speed": 8,
+    "attack": 10,
+    "range": 2,
+    "special": "השתקפות מבלבלת",
+    "specialEn": "Reflection confuses",
+    "dnaCost": 52,
+    "biomassCost": 24
+  },
+  {
+    "id": "boulder-ox",
+    "nameHe": "שור-סלע",
+    "nameEn": "Boulder Ox",
+    "tags": [
+      "tank"
+    ],
+    "hp": 175,
+    "speed": 3,
+    "attack": 20,
+    "range": 1,
+    "special": "טריסה כבדה דוחפת",
+    "specialEn": "Heavy charge shove",
+    "dnaCost": 105,
+    "biomassCost": 58
+  },
+  {
+    "id": "venom-wasp",
+    "nameHe": "צרעה-ארס",
+    "nameEn": "Venom Wasp",
+    "tags": [
+      "assassin",
+      "flyer",
+      "swarm"
+    ],
+    "hp": 42,
+    "speed": 9,
+    "attack": 22,
+    "range": 1,
+    "special": "עקיצת ארס חזקה",
+    "specialEn": "Strong venom sting",
+    "dnaCost": 68,
+    "biomassCost": 22
+  },
+  {
+    "id": "tide-otter",
+    "nameHe": "לוטרה-גאות",
+    "nameEn": "Tide Otter",
+    "tags": [
+      "aquatic",
+      "skirmish"
+    ],
+    "hp": 72,
+    "speed": 7,
+    "attack": 15,
+    "range": 1,
+    "special": "גל קצר דוחף",
+    "specialEn": "Short wave knockback",
+    "dnaCost": 54,
+    "biomassCost": 29
+  },
+  {
+    "id": "bloom-deer",
+    "nameHe": "אייל-פריחה",
+    "nameEn": "Bloom Deer",
+    "tags": [
+      "support",
+      "skirmish"
+    ],
+    "hp": 78,
+    "speed": 7,
+    "attack": 12,
+    "range": 2,
+    "special": "פריחה מרפאת קלה",
+    "specialEn": "Bloom light heal",
+    "dnaCost": 60,
+    "biomassCost": 32
+  },
+  {
+    "id": "obsidian-scarab",
+    "nameHe": "חיפושית-אבסידיאן",
+    "nameEn": "Obsidian Scarab",
+    "tags": [
+      "burrower",
+      "tank"
+    ],
+    "hp": 120,
+    "speed": 3,
+    "attack": 16,
+    "range": 1,
+    "special": "שריון שחור קשה",
+    "specialEn": "Hard black armor",
+    "dnaCost": 88,
+    "biomassCost": 50
+  },
+  {
+    "id": "howl-jackal",
+    "nameHe": "תן-יללה",
+    "nameEn": "Howl Jackal",
+    "tags": [
+      "scout",
+      "skirmish"
+    ],
+    "hp": 62,
+    "speed": 8,
+    "attack": 17,
+    "range": 1,
+    "special": "יללה חושפת יחידות",
+    "specialEn": "Howl reveals units",
+    "dnaCost": 56,
+    "biomassCost": 27
+  },
+  {
+    "id": "arc-manta",
+    "nameHe": "מנטה-קשת",
+    "nameEn": "Arc Manta",
+    "tags": [
+      "aquatic",
+      "artillery"
+    ],
+    "hp": 85,
+    "speed": 5,
+    "attack": 28,
+    "range": 4,
+    "special": "קשת חשמלית רחוקה",
+    "specialEn": "Distant electric arc",
+    "dnaCost": 92,
+    "biomassCost": 42
+  },
+  {
+    "id": "petal-mantis",
+    "nameHe": "גמל-שלמה-עלה",
+    "nameEn": "Petal Mantis",
+    "tags": [
+      "assassin"
+    ],
+    "hp": 58,
+    "speed": 8,
+    "attack": 30,
+    "range": 1,
+    "special": "מכת עלה קטלנית",
+    "specialEn": "Lethal petal slash",
+    "dnaCost": 76,
+    "biomassCost": 26
+  },
+  {
+    "id": "steam-bison",
+    "nameHe": "ביזון-קיטור",
+    "nameEn": "Steam Bison",
+    "tags": [
+      "tank",
+      "control"
+    ],
+    "hp": 155,
+    "speed": 4,
+    "attack": 18,
+    "range": 2,
+    "special": "ענן קיטור מסתיר",
+    "specialEn": "Steam cloud blinds",
+    "dnaCost": 90,
+    "biomassCost": 52
+  },
+  {
+    "id": "needle-porcupine",
+    "nameHe": "דורבן-מחט",
+    "nameEn": "Needle Porcupine",
+    "tags": [
+      "ranged",
+      "tank"
+    ],
+    "hp": 110,
+    "speed": 3,
+    "attack": 14,
+    "range": 3,
+    "special": "ירי מחטים צפוף",
+    "specialEn": "Dense needle volley",
+    "dnaCost": 74,
+    "biomassCost": 40
+  },
+  {
+    "id": "drift-albatross",
+    "nameHe": "אלבטרוס-סחף",
+    "nameEn": "Drift Albatross",
+    "tags": [
+      "flyer",
+      "scout"
+    ],
+    "hp": 65,
+    "speed": 7,
+    "attack": 12,
+    "range": 2,
+    "special": "ראייה רחבה מעל",
+    "specialEn": "Wide aerial vision",
+    "dnaCost": 58,
+    "biomassCost": 30
+  },
+  {
+    "id": "coral-eel",
+    "nameHe": "צלופח-אלמוג",
+    "nameEn": "Coral Eel",
+    "tags": [
+      "aquatic",
+      "assassin"
+    ],
+    "hp": 60,
+    "speed": 7,
+    "attack": 25,
+    "range": 1,
+    "special": "נשיכה חודרת שריון",
+    "specialEn": "Armor-piercing bite",
+    "dnaCost": 70,
+    "biomassCost": 28
+  },
+  {
+    "id": "sand-scorpion",
+    "nameHe": "עקרב-חול",
+    "nameEn": "Sand Scorpion",
+    "tags": [
+      "burrower",
+      "assassin"
+    ],
+    "hp": 70,
+    "speed": 5,
+    "attack": 26,
+    "range": 1,
+    "special": "ארס חול משתק",
+    "specialEn": "Sand venom paralyze",
+    "dnaCost": 74,
+    "biomassCost": 30
+  },
+  {
+    "id": "lantern-fish",
+    "nameHe": "דג-פנס",
+    "nameEn": "Lantern Fish",
+    "tags": [
+      "aquatic",
+      "support"
+    ],
+    "hp": 55,
+    "speed": 5,
+    "attack": 9,
+    "range": 2,
+    "special": "אור חושף אויבים",
+    "specialEn": "Light reveals foes",
+    "dnaCost": 48,
+    "biomassCost": 22
+  },
+  {
+    "id": "rubble-pangolin",
+    "nameHe": "פנגולין-הריסות",
+    "nameEn": "Rubble Pangolin",
+    "tags": [
+      "tank",
+      "burrower"
+    ],
+    "hp": 145,
+    "speed": 3,
+    "attack": 14,
+    "range": 1,
+    "special": "גלגול שריון דורס",
+    "specialEn": "Armor roll crush",
+    "dnaCost": 86,
+    "biomassCost": 48
+  },
+  {
+    "id": "chirp-locust",
+    "nameHe": "ארבה-צפצוף",
+    "nameEn": "Chirp Locust",
+    "tags": [
+      "swarm",
+      "skirmish"
+    ],
+    "hp": 40,
+    "speed": 8,
+    "attack": 10,
+    "range": 1,
+    "special": "נחיל מציק לאויב",
+    "specialEn": "Swarm harasses foe",
+    "dnaCost": 32,
+    "biomassCost": 15
+  },
+  {
+    "id": "amber-bear",
+    "nameHe": "דב-ענבר",
+    "nameEn": "Amber Bear",
+    "tags": [
+      "tank",
+      "skirmish"
+    ],
+    "hp": 165,
+    "speed": 4,
+    "attack": 22,
+    "range": 1,
+    "special": "חיבוק ענבר מלכד",
+    "specialEn": "Amber hug traps",
+    "dnaCost": 98,
+    "biomassCost": 55
+  },
+  {
+    "id": "gust-falcon",
+    "nameHe": "בז-משב",
+    "nameEn": "Gust Falcon",
+    "tags": [
+      "flyer",
+      "assassin"
+    ],
+    "hp": 60,
+    "speed": 10,
+    "attack": 23,
+    "range": 1,
+    "special": "צלילת משב מהירה",
+    "specialEn": "Swift gust dive",
+    "dnaCost": 80,
+    "biomassCost": 34
+  },
+  {
+    "id": "mire-hippo",
+    "nameHe": "היפו-ביצה",
+    "nameEn": "Mire Hippo",
+    "tags": [
+      "tank",
+      "aquatic"
+    ],
+    "hp": 185,
+    "speed": 3,
+    "attack": 19,
+    "range": 1,
+    "special": "בוץ עוצר תנועה",
+    "specialEn": "Mud stops movement",
+    "dnaCost": 108,
+    "biomassCost": 62
+  },
+  {
+    "id": "crystal-ibis",
+    "nameHe": "איביס-גביש",
+    "nameEn": "Crystal Ibis",
+    "tags": [
+      "ranged",
+      "flyer"
+    ],
+    "hp": 58,
+    "speed": 7,
+    "attack": 17,
+    "range": 4,
+    "special": "קרן גביש דקה",
+    "specialEn": "Thin crystal beam",
+    "dnaCost": 76,
+    "biomassCost": 35
+  },
+  {
+    "id": "smoke-rat",
+    "nameHe": "חולדה-עשן",
+    "nameEn": "Smoke Rat",
+    "tags": [
+      "scout",
+      "swarm"
+    ],
+    "hp": 42,
+    "speed": 9,
+    "attack": 9,
+    "range": 1,
+    "special": "עשן מסתיר נתיב",
+    "specialEn": "Smoke cloaks path",
+    "dnaCost": 36,
+    "biomassCost": 17
+  },
+  {
+    "id": "quill-ram",
+    "nameHe": "אייל-זיפים",
+    "nameEn": "Quill Ram",
+    "tags": [
+      "skirmish"
+    ],
+    "hp": 95,
+    "speed": 6,
+    "attack": 21,
+    "range": 1,
+    "special": "נגיחת זיפים דוקרת",
+    "specialEn": "Quill ram puncture",
+    "dnaCost": 62,
+    "biomassCost": 33
+  },
+  {
+    "id": "frost-seal",
+    "nameHe": "כלב-ים-כפור",
+    "nameEn": "Frost Seal",
+    "tags": [
+      "aquatic",
+      "control"
+    ],
+    "hp": 100,
+    "speed": 4,
+    "attack": 13,
+    "range": 2,
+    "special": "קרח מחליק רצפה",
+    "specialEn": "Ice slicks ground",
+    "dnaCost": 70,
+    "biomassCost": 38
+  },
+  {
+    "id": "blight-crow",
+    "nameHe": "עורב-כיליון",
+    "nameEn": "Blight Crow",
+    "tags": [
+      "flyer",
+      "control"
+    ],
+    "hp": 50,
+    "speed": 8,
+    "attack": 11,
+    "range": 2,
+    "special": "קללת חולשה קלה",
+    "specialEn": "Mild blight curse",
+    "dnaCost": 58,
+    "biomassCost": 26
+  },
+  {
+    "id": "stone-crane",
+    "nameHe": "עגור-אבן",
+    "nameEn": "Stone Crane",
+    "tags": [
+      "ranged",
+      "support"
+    ],
+    "hp": 75,
+    "speed": 5,
+    "attack": 15,
+    "range": 4,
+    "special": "זריקת אבן מדויקת",
+    "specialEn": "Precise stone throw",
+    "dnaCost": 72,
+    "biomassCost": 36
+  },
+  {
+    "id": "lava-salamander",
+    "nameHe": "סלמנדרה-לבה",
+    "nameEn": "Lava Salamander",
+    "tags": [
+      "artillery",
+      "burrower"
+    ],
+    "hp": 80,
+    "speed": 4,
+    "attack": 30,
+    "range": 4,
+    "special": "יריקת לבה שורפת",
+    "specialEn": "Lava spit burn zone",
+    "dnaCost": 94,
+    "biomassCost": 44
+  },
+  {
+    "id": "pearl-clam",
+    "nameHe": "צדפה-פנינה",
+    "nameEn": "Pearl Clam",
+    "tags": [
+      "tank",
+      "aquatic"
+    ],
+    "hp": 170,
+    "speed": 2,
+    "attack": 10,
+    "range": 1,
+    "special": "סגירה מחזקת שריון",
+    "specialEn": "Close boosts armor",
+    "dnaCost": 88,
+    "biomassCost": 52
+  },
+  {
+    "id": "shadow-ferret",
+    "nameHe": "חורפן-צל",
+    "nameEn": "Shadow Ferret",
+    "tags": [
+      "assassin",
+      "scout"
+    ],
+    "hp": 48,
+    "speed": 9,
+    "attack": 24,
+    "range": 1,
+    "special": "התגנבות בצללים",
+    "specialEn": "Stealth in shadows",
+    "dnaCost": 64,
+    "biomassCost": 24
+  },
+  {
+    "id": "vine-ape",
+    "nameHe": "קוף-גפן",
+    "nameEn": "Vine Ape",
+    "tags": [
+      "skirmish",
+      "control"
+    ],
+    "hp": 88,
+    "speed": 6,
+    "attack": 17,
+    "range": 2,
+    "special": "גפנים מושכות יעד",
+    "specialEn": "Vines pull target",
+    "dnaCost": 66,
+    "biomassCost": 34
+  },
+  {
+    "id": "bolt-hare",
+    "nameHe": "ארנבת-ברק",
+    "nameEn": "Bolt Hare",
+    "tags": [
+      "scout",
+      "skirmish"
+    ],
+    "hp": 46,
+    "speed": 10,
+    "attack": 12,
+    "range": 1,
+    "special": "זיגזג מהיר מתחמק",
+    "specialEn": "Zigzag dodge dash",
+    "dnaCost": 44,
+    "biomassCost": 19
+  },
+  {
+    "id": "iron-beetle",
+    "nameHe": "חיפושית-ברזל",
+    "nameEn": "Iron Beetle",
+    "tags": [
+      "tank",
+      "swarm"
+    ],
+    "hp": 125,
+    "speed": 3,
+    "attack": 15,
+    "range": 1,
+    "special": "שריון קבוצתי קשיח",
+    "specialEn": "Group hard armor",
+    "dnaCost": 80,
+    "biomassCost": 45
+  },
+  {
+    "id": "mist-heron",
+    "nameHe": "אנפה-ערפל",
+    "nameEn": "Mist Heron",
+    "tags": [
+      "flyer",
+      "control"
+    ],
+    "hp": 62,
+    "speed": 6,
+    "attack": 13,
+    "range": 3,
+    "special": "ערפל מאט ירי",
+    "specialEn": "Mist slows shots",
+    "dnaCost": 62,
+    "biomassCost": 30
+  },
+  {
+    "id": "spike-urchin-boar",
+    "nameHe": "חזיר-קיפוד",
+    "nameEn": "Spike Urchin Boar",
+    "tags": [
+      "tank",
+      "skirmish"
+    ],
+    "hp": 130,
+    "speed": 4,
+    "attack": 18,
+    "range": 1,
+    "special": "קוצים פוגעים בקרב",
+    "specialEn": "Spikes hurt in melee",
+    "dnaCost": 78,
+    "biomassCost": 46
+  },
+  {
+    "id": "echo-dolphin",
+    "nameHe": "דולפין-הד",
+    "nameEn": "Echo Dolphin",
+    "tags": [
+      "aquatic",
+      "scout"
+    ],
+    "hp": 70,
+    "speed": 8,
+    "attack": 12,
+    "range": 2,
+    "special": "סונאר חושף מים",
+    "specialEn": "Sonar reveals water",
+    "dnaCost": 56,
+    "biomassCost": 30
+  },
+  {
+    "id": "ember-fox",
+    "nameHe": "שועל-גחלת",
+    "nameEn": "Ember Fox",
+    "tags": [
+      "assassin",
+      "skirmish"
+    ],
+    "hp": 58,
+    "speed": 8,
+    "attack": 23,
+    "range": 1,
+    "special": "זנב אש שורף",
+    "specialEn": "Fire tail burn",
+    "dnaCost": 68,
+    "biomassCost": 27
+  },
+  {
+    "id": "glacier-walrus",
+    "nameHe": "ניבתן-קרחון",
+    "nameEn": "Glacier Walrus",
+    "tags": [
+      "tank",
+      "aquatic"
+    ],
+    "hp": 180,
+    "speed": 2,
+    "attack": 20,
+    "range": 1,
+    "special": "מכת ניב קופאת",
+    "specialEn": "Tusk strike freezes",
+    "dnaCost": 112,
+    "biomassCost": 64
+  },
+  {
+    "id": "pollen-bee",
+    "nameHe": "דבורה-אבקה",
+    "nameEn": "Pollen Bee",
+    "tags": [
+      "support",
+      "flyer",
+      "swarm"
+    ],
+    "hp": 40,
+    "speed": 8,
+    "attack": 8,
+    "range": 1,
+    "special": "אבקה מחזקת בעלות",
+    "specialEn": "Pollen buffs allies",
+    "dnaCost": 40,
+    "biomassCost": 18
+  },
+  {
+    "id": "rift-serpent",
+    "nameHe": "נחש-בקע",
+    "nameEn": "Rift Serpent",
+    "tags": [
+      "burrower",
+      "assassin"
+    ],
+    "hp": 65,
+    "speed": 7,
+    "attack": 27,
+    "range": 1,
+    "special": "פריצה מתחת לקרקע",
+    "specialEn": "Burst from underground",
+    "dnaCost": 78,
+    "biomassCost": 30
+  },
+  {
+    "id": "chrome-stork",
+    "nameHe": "חסידה-כרום",
+    "nameEn": "Chrome Stork",
+    "tags": [
+      "ranged",
+      "flyer"
+    ],
+    "hp": 72,
+    "speed": 6,
+    "attack": 16,
+    "range": 4,
+    "special": "מקור כרום חודר",
+    "specialEn": "Chrome beak pierce",
+    "dnaCost": 74,
+    "biomassCost": 36
+  },
+  {
+    "id": "bog-crocodile",
+    "nameHe": "תנין-ביצה",
+    "nameEn": "Bog Crocodile",
+    "tags": [
+      "tank",
+      "aquatic"
+    ],
+    "hp": 160,
+    "speed": 4,
+    "attack": 21,
+    "range": 1,
+    "special": "גרירה למים עמוקים",
+    "specialEn": "Drag into deep water",
+    "dnaCost": 96,
+    "biomassCost": 54
+  },
+  {
+    "id": "star-moth",
+    "nameHe": "עש-כוכב",
+    "nameEn": "Star Moth",
+    "tags": [
+      "support",
+      "flyer"
+    ],
+    "hp": 45,
+    "speed": 7,
+    "attack": 8,
+    "range": 2,
+    "special": "אור כוכב מרפא",
+    "specialEn": "Starlight minor heal",
+    "dnaCost": 50,
+    "biomassCost": 22
+  },
+  {
+    "id": "dust-coyote",
+    "nameHe": "קויוט-אבק",
+    "nameEn": "Dust Coyote",
+    "tags": [
+      "scout",
+      "skirmish"
+    ],
+    "hp": 60,
+    "speed": 9,
+    "attack": 16,
+    "range": 1,
+    "special": "ענן אבק מסתיר",
+    "specialEn": "Dust cloud cloak",
+    "dnaCost": 52,
+    "biomassCost": 25
+  },
+  {
+    "id": "volt-crab",
+    "nameHe": "סרטן-מתח",
+    "nameEn": "Volt Crab",
+    "tags": [
+      "artillery",
+      "aquatic"
+    ],
+    "hp": 95,
+    "speed": 3,
+    "attack": 27,
+    "range": 4,
+    "special": "פריקת מתח שטחית",
+    "specialEn": "Volt discharge AoE",
+    "dnaCost": 88,
+    "biomassCost": 42
+  },
+  {
+    "id": "bone-vulture",
+    "nameHe": "נשר-עצמות",
+    "nameEn": "Bone Vulture",
+    "tags": [
+      "flyer",
+      "assassin"
+    ],
+    "hp": 66,
+    "speed": 7,
+    "attack": 22,
+    "range": 1,
+    "special": "נשיכת עצם מחלישה",
+    "specialEn": "Bone bite weakens",
+    "dnaCost": 72,
+    "biomassCost": 32
+  },
+  {
+    "id": "reed-snake",
+    "nameHe": "נחש-קנה",
+    "nameEn": "Reed Snake",
+    "tags": [
+      "assassin",
+      "aquatic"
+    ],
+    "hp": 52,
+    "speed": 8,
+    "attack": 25,
+    "range": 1,
+    "special": "התגנבות בין קנים",
+    "specialEn": "Ambush among reeds",
+    "dnaCost": 66,
+    "biomassCost": 25
+  },
+  {
+    "id": "granite-sheep",
+    "nameHe": "כבש-גרניט",
+    "nameEn": "Granite Sheep",
+    "tags": [
+      "tank",
+      "skirmish"
+    ],
+    "hp": 140,
+    "speed": 4,
+    "attack": 19,
+    "range": 1,
+    "special": "נגיחת סלע כבדה",
+    "specialEn": "Heavy rock headbutt",
+    "dnaCost": 84,
+    "biomassCost": 48
+  },
+  {
+    "id": "prism-butterfly",
+    "nameHe": "פרפר-פריזמה",
+    "nameEn": "Prism Butterfly",
+    "tags": [
+      "control",
+      "flyer"
+    ],
+    "hp": 42,
+    "speed": 7,
+    "attack": 9,
+    "range": 3,
+    "special": "אור מבלבל אויבים",
+    "specialEn": "Light confuses foes",
+    "dnaCost": 54,
+    "biomassCost": 20
+  },
+  {
+    "id": "tunnel-vole",
+    "nameHe": "נברן-מנהרה",
+    "nameEn": "Tunnel Vole",
+    "tags": [
+      "burrower",
+      "swarm"
+    ],
+    "hp": 45,
+    "speed": 6,
+    "attack": 11,
+    "range": 1,
+    "special": "מנהרות לנחיל",
+    "specialEn": "Tunnels for swarm",
+    "dnaCost": 38,
+    "biomassCost": 18
+  },
+  {
+    "id": "tide-heron",
+    "nameHe": "אנפה-גאות",
+    "nameEn": "Tide Heron",
+    "tags": [
+      "ranged",
+      "aquatic"
+    ],
+    "hp": 68,
+    "speed": 5,
+    "attack": 18,
+    "range": 4,
+    "special": "מקור מים מדויק",
+    "specialEn": "Precise water peck",
+    "dnaCost": 70,
+    "biomassCost": 34
+  },
+  {
+    "id": "ash-wraith-hound",
+    "nameHe": "זאב-אפר-כלאי",
+    "nameEn": "Ash Wraith Hound",
+    "tags": [
+      "skirmish",
+      "assassin"
+    ],
+    "hp": 75,
+    "speed": 8,
+    "attack": 21,
+    "range": 1,
+    "special": "נשיכת אפר שורפת",
+    "specialEn": "Ash bite burn",
+    "dnaCost": 70,
+    "biomassCost": 32
+  },
+  {
+    "id": "copper-iguana",
+    "nameHe": "איגואנה-נחושת",
+    "nameEn": "Copper Iguana",
+    "tags": [
+      "tank",
+      "ranged"
+    ],
+    "hp": 115,
+    "speed": 3,
+    "attack": 14,
+    "range": 3,
+    "special": "יריקת נחושת חמה",
+    "specialEn": "Hot copper spit",
+    "dnaCost": 76,
+    "biomassCost": 42
+  },
+  {
+    "id": "gale-ray",
+    "nameHe": "טריגון-רוח",
+    "nameEn": "Gale Ray",
+    "tags": [
+      "flyer",
+      "aquatic"
+    ],
+    "hp": 80,
+    "speed": 6,
+    "attack": 14,
+    "range": 2,
+    "special": "משב דוחף אויבים",
+    "specialEn": "Gale shove foes",
+    "dnaCost": 68,
+    "biomassCost": 35
+  },
+  {
+    "id": "spore-toad",
+    "nameHe": "קרפדה-נבג",
+    "nameEn": "Spore Toad",
+    "tags": [
+      "control",
+      "support"
+    ],
+    "hp": 85,
+    "speed": 3,
+    "attack": 11,
+    "range": 3,
+    "special": "נבגים מאטים ומחלישים",
+    "specialEn": "Spores slow weaken",
+    "dnaCost": 64,
+    "biomassCost": 36
+  },
+  {
+    "id": "flint-boar",
+    "nameHe": "חזיר-צור",
+    "nameEn": "Flint Boar",
+    "tags": [
+      "skirmish",
+      "tank"
+    ],
+    "hp": 125,
+    "speed": 5,
+    "attack": 20,
+    "range": 1,
+    "special": "ניצוצות צור בקרב",
+    "specialEn": "Flint sparks melee",
+    "dnaCost": 78,
+    "biomassCost": 44
+  },
+  {
+    "id": "night-gecko",
+    "nameHe": "שממית-לילה",
+    "nameEn": "Night Gecko",
+    "tags": [
+      "scout",
+      "assassin"
+    ],
+    "hp": 50,
+    "speed": 8,
+    "attack": 18,
+    "range": 1,
+    "special": "ראיית לילה חושפת",
+    "specialEn": "Night vision reveal",
+    "dnaCost": 54,
+    "biomassCost": 23
+  },
+  {
+    "id": "magma-crab",
+    "nameHe": "סרטן-מגמה",
+    "nameEn": "Magma Crab",
+    "tags": [
+      "tank",
+      "artillery"
+    ],
+    "hp": 150,
+    "speed": 2,
+    "attack": 24,
+    "range": 3,
+    "special": "ירי מגמה כבד",
+    "specialEn": "Heavy magma lob",
+    "dnaCost": 100,
+    "biomassCost": 56
+  },
+  {
+    "id": "silk-moth",
+    "nameHe": "עש-משי",
+    "nameEn": "Silk Moth",
+    "tags": [
+      "control",
+      "swarm"
+    ],
+    "hp": 44,
+    "speed": 6,
+    "attack": 8,
+    "range": 2,
+    "special": "חוטי משי מלכדים",
+    "specialEn": "Silk threads snare",
+    "dnaCost": 46,
+    "biomassCost": 20
+  },
+  {
+    "id": "brine-sharkling",
+    "nameHe": "כרישון-תמלחת",
+    "nameEn": "Brine Sharkling",
+    "tags": [
+      "aquatic",
+      "skirmish"
+    ],
+    "hp": 90,
+    "speed": 7,
+    "attack": 22,
+    "range": 1,
+    "special": "נשיכת תמלחת שורפת",
+    "specialEn": "Brine bite burn",
+    "dnaCost": 82,
+    "biomassCost": 38
+  },
+  {
+    "id": "root-owl",
+    "nameHe": "ינשוף-שורש",
+    "nameEn": "Root Owl",
+    "tags": [
+      "flyer",
+      "burrower"
+    ],
+    "hp": 58,
+    "speed": 6,
+    "attack": 14,
+    "range": 2,
+    "special": "שורשי אוויר תופסים",
+    "specialEn": "Air roots snare",
+    "dnaCost": 60,
+    "biomassCost": 28
+  },
+  {
+    "id": "cinder-stag",
+    "nameHe": "צבי-גחלת",
+    "nameEn": "Cinder Stag",
+    "tags": [
+      "skirmish"
+    ],
+    "hp": 92,
+    "speed": 7,
+    "attack": 19,
+    "range": 2,
+    "special": "קרניים לוהטות דוחפות",
+    "specialEn": "Ember antlers shove",
+    "dnaCost": 64,
+    "biomassCost": 34
+  },
+  {
+    "id": "frost-mite",
+    "nameHe": "קרדית-כפור",
+    "nameEn": "Frost Mite",
+    "tags": [
+      "swarm",
+      "control"
+    ],
+    "hp": 40,
+    "speed": 5,
+    "attack": 8,
+    "range": 1,
+    "special": "עקיצת כפור מאטה",
+    "specialEn": "Frost bite slows",
+    "dnaCost": 30,
+    "biomassCost": 15
+  },
+  {
+    "id": "thunder-ox",
+    "nameHe": "שור-רעם",
+    "nameEn": "Thunder Ox",
+    "tags": [
+      "tank",
+      "artillery"
+    ],
+    "hp": 170,
+    "speed": 3,
+    "attack": 25,
+    "range": 3,
+    "special": "געיית רעם שטחית",
+    "specialEn": "Thunder bellow AoE",
+    "dnaCost": 115,
+    "biomassCost": 60
+  },
+  {
+    "id": "pearl-otter",
+    "nameHe": "לוטרת-פנינה",
+    "nameEn": "Pearl Otter",
+    "tags": [
+      "aquatic",
+      "support"
+    ],
+    "hp": 68,
+    "speed": 7,
+    "attack": 12,
+    "range": 1,
+    "special": "פנינה מחזקת שריון",
+    "specialEn": "Pearl armor buff",
+    "dnaCost": 58,
+    "biomassCost": 30
+  },
+  {
+    "id": "void-bat",
+    "nameHe": "עטלף-ריק",
+    "nameEn": "Void Bat",
+    "tags": [
+      "flyer",
+      "assassin"
+    ],
+    "hp": 48,
+    "speed": 9,
+    "attack": 20,
+    "range": 1,
+    "special": "נשיכת ריק מחלישה",
+    "specialEn": "Void bite drains",
+    "dnaCost": 66,
+    "biomassCost": 24
+  },
+  {
+    "id": "sand-falcon",
+    "nameHe": "בז-חול",
+    "nameEn": "Sand Falcon",
+    "tags": [
+      "flyer",
+      "scout"
+    ],
+    "hp": 55,
+    "speed": 9,
+    "attack": 15,
+    "range": 2,
+    "special": "סופת חול קלה",
+    "specialEn": "Light sandstorm",
+    "dnaCost": 60,
+    "biomassCost": 28
+  },
+  {
+    "id": "iron-carp",
+    "nameHe": "קרפיון-ברזל",
+    "nameEn": "Iron Carp",
+    "tags": [
+      "aquatic",
+      "tank"
+    ],
+    "hp": 130,
+    "speed": 4,
+    "attack": 14,
+    "range": 1,
+    "special": "קשקשים מחזירים מכות",
+    "specialEn": "Scales deflect hits",
+    "dnaCost": 82,
+    "biomassCost": 46
+  },
+  {
+    "id": "bloom-spider",
+    "nameHe": "עכביש-פריחה",
+    "nameEn": "Bloom Spider",
+    "tags": [
+      "control",
+      "support"
+    ],
+    "hp": 60,
+    "speed": 5,
+    "attack": 13,
+    "range": 2,
+    "special": "רשת פריחה מרפאת",
+    "specialEn": "Bloom web heals",
+    "dnaCost": 62,
+    "biomassCost": 30
+  },
+  {
+    "id": "shard-eagle",
+    "nameHe": "עיט-רסיס",
+    "nameEn": "Shard Eagle",
+    "tags": [
+      "flyer",
+      "ranged"
+    ],
+    "hp": 70,
+    "speed": 8,
+    "attack": 18,
+    "range": 3,
+    "special": "ירי רסיסים באוויר",
+    "specialEn": "Aerial shard volley",
+    "dnaCost": 84,
+    "biomassCost": 38
+  },
+  {
+    "id": "mire-newt",
+    "nameHe": "טריטון-ביצה",
+    "nameEn": "Mire Newt",
+    "tags": [
+      "burrower",
+      "control"
+    ],
+    "hp": 65,
+    "speed": 4,
+    "attack": 12,
+    "range": 2,
+    "special": "בוץ מלכד רגליים",
+    "specialEn": "Mire traps feet",
+    "dnaCost": 56,
+    "biomassCost": 28
+  },
+  {
+    "id": "solar-tortoise",
+    "nameHe": "צב-שמש",
+    "nameEn": "Solar Tortoise",
+    "tags": [
+      "tank",
+      "support"
+    ],
+    "hp": 195,
+    "speed": 2,
+    "attack": 12,
+    "range": 2,
+    "special": "שריון שמש מחמם בעלות",
+    "specialEn": "Sun shell warms allies",
+    "dnaCost": 118,
+    "biomassCost": 68
+  },
+  {
+    "id": "rift-hawk",
+    "nameHe": "נץ-בקע",
+    "nameEn": "Rift Hawk",
+    "tags": [
+      "flyer",
+      "artillery"
+    ],
+    "hp": 62,
+    "speed": 8,
+    "attack": 29,
+    "range": 5,
+    "special": "צלילת בקע רחוקה",
+    "specialEn": "Rift dive long shot",
+    "dnaCost": 96,
+    "biomassCost": 40
+  }
+]
