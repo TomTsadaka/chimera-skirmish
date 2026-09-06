@@ -1,0 +1,6 @@
+{
+  "hybridSize": "max(A,B)",
+  "hybridResearchTier": "max(A,B)",
+  "combatUnlockNow": "researchTier<=2",
+  "tier1and2Count": 23
+}
