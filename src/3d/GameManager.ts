@@ -154,6 +154,11 @@ export class GameManager {
     this.spawnPlayerArmy(this.armyRoster[0]);
     this.spawnEnemyArmy();
     
+    // Frame camera to show player base and units
+    const playerBaseX = this.playerHQ.x;
+    const playerBaseZ = this.playerHQ.y;
+    this.camera.frameView(playerBaseX + 30, playerBaseZ, 60);
+    
     // Setup UI
     this.uiManager.show();
     this.uiManager.updateResources(this.playerResources);

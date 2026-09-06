@@ -274,6 +274,41 @@ export class UIManager {
     
     this.container.appendChild(panel);
     this.trainPanel = panel;
+    
+    // Add hint when panel is hidden
+    const hint = document.createElement('div');
+    hint.id = 'train-panel-hint';
+    hint.textContent = 'לחץ על הבסיס שלך';
+    hint.style.cssText = `
+      position: absolute;
+      bottom: 120px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.85);
+      border: 3px solid ${colors.player};
+      border-radius: 8px;
+      padding: 14px 24px;
+      pointer-events: none;
+      color: ${colors.player};
+      font-size: 18px;
+      font-weight: bold;
+      text-shadow: 0 0 10px ${colors.player};
+      box-shadow: 0 0 20px ${colors.player}40;
+    `;
+    this.container.appendChild(hint);
+    
+    // Add CSS animation for pulse effect
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes pulse-hint {
+        0%, 100% { opacity: 0.7; transform: scale(1); }
+        50% { opacity: 1; transform: scale(1.05); }
+      }
+      #train-panel-hint {
+        animation: pulse-hint 2s infinite;
+      }
+    `;
+    document.head.appendChild(style);
+    
     return panel;
   }
 
@@ -350,6 +385,11 @@ export class UIManager {
     }
   ): void {
     if (!this.trainPanel) return;
+    
+    // Hide hint when panel is shown
+    const hint = document.getElementById('train-panel-hint');
+    if (hint) hint.style.display = 'none';
+    
     this.trainPanel.style.display = 'block';
     this.trainPanelVisible = true;
     this.setupTrainPanel(armyRoster, resources, callbacks);
@@ -357,6 +397,11 @@ export class UIManager {
   
   public hideTrainPanel(): void {
     if (!this.trainPanel) return;
+    
+    // Show hint when panel is hidden
+    const hint = document.getElementById('train-panel-hint');
+    if (hint) hint.style.display = 'block';
+    
     this.trainPanel.style.display = 'none';
     this.trainPanelVisible = false;
   }
