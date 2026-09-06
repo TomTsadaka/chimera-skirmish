@@ -107,8 +107,6 @@ export class Minimap {
     const worldX = localX / this.scaleX;
     const worldY = localY / this.scaleY;
 
-    console.log('[DEBUG] Minimap click:', { screenX: pointer.x, screenY: pointer.y, localX, localY, worldX, worldY });
-
     // Camera jump only (not unit orders)
     cam.pan(worldX, worldY, 300, 'Sine.easeOut');
   }

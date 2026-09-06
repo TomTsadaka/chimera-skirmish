@@ -135,7 +135,11 @@ export class BattleScene extends Phaser.Scene {
     this.input.on('pointermove', this.onPointerMove, this);
     this.input.on('pointerup', this.onPointerUp, this);
 
-    // Use game-level events for canvas leave/enter (more reliable than pointer events)
+    // Canvas-specific pointer enter/leave events (primary edge-pan guard)
+    this.input.on('gameout', this.onGameOut, this);
+    this.input.on('gameover', this.onGameOver, this);
+    
+    // Window-level blur/focus as additional guards
     this.game.events.on('blur', this.onGameBlur, this);
     this.game.events.on('focus', this.onGameFocus, this);
     this.game.events.on('hidden', this.onGameBlur, this);
@@ -164,6 +168,14 @@ export class BattleScene extends Phaser.Scene {
     this.input.mouse!.disableContextMenu();
   }
 
+  private onGameOut = (): void => {
+    this.pointerInWindow = false;
+  };
+
+  private onGameOver = (): void => {
+    this.pointerInWindow = true;
+  };
+
   private onGameBlur = (): void => {
     this.pointerInWindow = false;
   };
@@ -173,11 +185,22 @@ export class BattleScene extends Phaser.Scene {
   };
 
   shutdown(): void {
-    // Clean up game event listeners
+    // Clean up ALL event listeners to prevent stacked handlers on rematch
+    this.input.off('pointerdown', this.onPointerDown, this);
+    this.input.off('pointermove', this.onPointerMove, this);
+    this.input.off('pointerup', this.onPointerUp, this);
+    this.input.off('gameout', this.onGameOut, this);
+    this.input.off('gameover', this.onGameOver, this);
+    
     this.game.events.off('blur', this.onGameBlur, this);
     this.game.events.off('focus', this.onGameFocus, this);
     this.game.events.off('hidden', this.onGameBlur, this);
     this.game.events.off('visible', this.onGameFocus, this);
+    
+    // Remove keyboard listeners
+    if (this.input.keyboard) {
+      this.input.keyboard.removeAllListeners();
+    }
   }
 
   private setupKeyboard(): void {
@@ -208,7 +231,6 @@ export class BattleScene extends Phaser.Scene {
     });
 
     this.input.keyboard!.on('keydown-ESC', (event: KeyboardEvent) => {
-      console.log('[DEBUG] ESC pressed, helpOverlay:', !!this.helpOverlay);
       // Priority: Always close help first, then deselect
       if (this.helpOverlay) {
         event.preventDefault();
@@ -296,7 +318,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private onPointerDown(pointer: Phaser.Input.Pointer): void {
-    if (this.gameEnded) return;
+    if (this.gameEnded || this.helpOverlay) return;
     
     // Use camera.getWorldPoint for reliable world coordinate conversion
     const cam = this.cameras.main;
@@ -304,23 +326,10 @@ export class BattleScene extends Phaser.Scene {
     const worldX = worldPoint.x;
     const worldY = worldPoint.y;
     
-    console.log('[DEBUG] onPointerDown:', {
-      screenX: pointer.x,
-      screenY: pointer.y,
-      pointerWorldX: pointer.worldX,
-      pointerWorldY: pointer.worldY,
-      getWorldPointX: worldX,
-      getWorldPointY: worldY,
-      cameraX: cam.scrollX,
-      cameraY: cam.scrollY,
-      zoom: cam.zoom
-    });
-    
     if (pointer.leftButtonDown()) {
       this.selectionStart = { x: worldX, y: worldY };
       
       const clickedUnit = this.getUnitAtPosition(worldX, worldY);
-      console.log('[DEBUG] clickedUnit:', clickedUnit ? `${clickedUnit.team} at (${clickedUnit.x}, ${clickedUnit.y})` : 'null');
       
       if (clickedUnit && clickedUnit.team === 'player') {
         if (!pointer.event.shiftKey) {
@@ -336,12 +345,10 @@ export class BattleScene extends Phaser.Scene {
         if (!this.selectedUnits.includes(clickedUnit)) {
           this.selectedUnits.push(clickedUnit);
         }
-        console.log('[DEBUG] selectedUnits count:', this.selectedUnits.length);
       } else if (!pointer.event.shiftKey) {
         this.clearSelection();
       }
     } else if (pointer.rightButtonDown()) {
-      console.log('[DEBUG] RMB order to:', worldX, worldY, 'selectedUnits:', this.selectedUnits.length);
       this.issueOrderToSelected(worldX, worldY);
       this.showClickMarker(worldX, worldY);
     }
@@ -380,8 +387,6 @@ export class BattleScene extends Phaser.Scene {
       const bounds = this.selectionBox.getBounds();
       const boxWidth = Math.abs(worldX - this.selectionStart.x);
       const boxHeight = Math.abs(worldY - this.selectionStart.y);
-      
-      console.log('[DEBUG] onPointerUp box select:', { bounds, boxWidth, boxHeight });
       
       if (boxWidth > 5 || boxHeight > 5) {
         if (!pointer.event.shiftKey) {
