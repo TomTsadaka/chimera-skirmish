@@ -369,7 +369,7 @@ export class GameManager {
     // Check if clicking on HQ first
     const clickedHQ = this.getHQAtPosition(worldPos);
     if (clickedHQ === this.playerHQ) {
-      // Select player HQ - show train and build panels
+      // Select player HQ - show train panel only (depth3: no build panel on HQ)
       if (!shift) {
         this.clearSelection();
       }
@@ -378,9 +378,7 @@ export class GameManager {
         onTrainUnit: (hybrid: HybridCreature) => this.trainCombatUnit(hybrid),
         onTrainArchetype: (archetype: AnimalArchetype) => this.trainArchetype(archetype)
       });
-      this.uiManager.showBuildPanel(this.playerResources, (buildingType) => {
-        this.startBuildingPlacement(buildingType);
-      });
+      this.uiManager.hideBuildPanel();
       this.updateSelectionUI();
       return;
     }
@@ -395,6 +393,8 @@ export class GameManager {
         if (this.selectedUnits.includes(clickedUnit)) {
           clickedUnit.setSelected(false);
           this.selectedUnits = this.selectedUnits.filter(u => u !== clickedUnit);
+          // Update panel visibility after deselection
+          this.updatePanelVisibility();
           return;
         }
       }
@@ -402,9 +402,8 @@ export class GameManager {
       if (!this.selectedUnits.includes(clickedUnit)) {
         this.selectedUnits.push(clickedUnit);
       }
-      // Hide train and build panels when selecting units (not HQ)
-      this.uiManager.hideTrainPanel();
-      this.uiManager.hideBuildPanel();
+      // Update panels based on selection
+      this.updatePanelVisibility();
     } else if (!shift) {
       this.clearSelection();
       this.uiManager.hideTrainPanel();
@@ -412,6 +411,21 @@ export class GameManager {
     }
     
     this.updateSelectionUI();
+  }
+  
+  private updatePanelVisibility(): void {
+    // Depth3 spec: Build panel visible when worker(s) selected, train panel hidden
+    const hasWorker = this.selectedUnits.some(u => u.role === 'worker');
+    
+    if (hasWorker) {
+      this.uiManager.showBuildPanel(this.playerResources, (buildingType) => {
+        this.startBuildingPlacement(buildingType);
+      });
+      this.uiManager.hideTrainPanel();
+    } else {
+      this.uiManager.hideBuildPanel();
+      this.uiManager.hideTrainPanel();
+    }
   }
   
   private getHQAtPosition(worldPos: THREE.Vector3): Building3D | null {

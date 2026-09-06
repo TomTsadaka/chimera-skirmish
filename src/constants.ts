@@ -21,7 +21,7 @@ export const GAME_CONSTANTS = {
   CAMERA_EDGE_PAN_PERCENT: 2.5, // percentage of screen
   CAMERA_EDGE_PAN_MIN: 12, // pixels
   CAMERA_EDGE_PAN_MAX: 28, // pixels
-  CAMERA_PAN_SPEED: 220, // world units per second (~3× faster for classic RTS edge-scroll feel)
+  CAMERA_PAN_SPEED: 70, // world units per second (depth3 spec: 60-80 wu/s, WASD and edge-pan same speed)
   CAMERA_ZOOM_MIN: 0.65,
   CAMERA_ZOOM_MAX: 1.35,
   CAMERA_ZOOM_STEP: 0.08,
