@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
-import { HybridCreature } from './types';
+import { HybridCreature, EconomyState, ResourceNode as ResourceNodeType, AnimalArchetype } from './types';
 import { Unit } from './Unit';
+import { Building } from './Building';
+import { ResourceNode } from './ResourceNode';
 import { AI } from './AI';
 import { ANIMAL_ARCHETYPES, GameData } from './GameData';
 import { strings, colors } from './i18n';
@@ -30,6 +32,19 @@ export class BattleScene extends Phaser.Scene {
   private helpOverlay: Phaser.GameObjects.Container | null = null;
   private pointerInWindow: boolean = true;
   
+  // Economy system
+  private playerResources: EconomyState = { biomass: 0, dna: 0 };
+  private enemyResources: EconomyState = { biomass: 0, dna: 0 };
+  private playerHQ!: Building;
+  private enemyHQ!: Building;
+  private resourceNodes: ResourceNode[] = [];
+  private resourceTexts: { biomass: Phaser.GameObjects.Text; dna: Phaser.GameObjects.Text } | null = null;
+  private trainPanel: Phaser.GameObjects.Container | null = null;
+  private trainPanelUnits: Array<{ name: string; cost: { dna: number; biomass: number }; type: 'worker' | 'unit' | 'archetype'; hybrid?: HybridCreature; archetype?: AnimalArchetype }> = [];
+  private dnaTrickleTimer: number = 0;
+  private armyRoster: HybridCreature[] = [];
+  private selectedUnitToTrain: HybridCreature | null = null;
+  
   private readonly MAP_WIDTH = GAME_CONSTANTS.MAP_WIDTH;
   private readonly MAP_HEIGHT = GAME_CONSTANTS.MAP_HEIGHT;
   private readonly CAMERA_SPEED = GAME_CONSTANTS.CAMERA_PAN_SPEED;
@@ -43,14 +58,41 @@ export class BattleScene extends Phaser.Scene {
     super({ key: 'BattleScene' });
   }
 
-  create(data: { hybrid: HybridCreature }): void {
+  create(data: { armyRoster?: HybridCreature[]; hybrid?: HybridCreature }): void {
     this.gameEnded = false;
-    this.controlGroups.clear(); // Clear control groups on restart
+    this.controlGroups.clear();
+    
+    // Support both old (hybrid) and new (armyRoster) formats for compatibility
+    if (data.armyRoster && data.armyRoster.length > 0) {
+      this.armyRoster = data.armyRoster;
+      this.selectedUnitToTrain = this.armyRoster[0]; // Default to first unit
+      this.registry.set('lastHybrid', this.armyRoster[0]); // For compatibility
+    } else if (data.hybrid) {
+      // Fallback for old single-hybrid format
+      this.armyRoster = [data.hybrid];
+      this.selectedUnitToTrain = data.hybrid;
+      this.registry.set('lastHybrid', data.hybrid);
+    } else {
+      // No army at all, shouldn't happen
+      this.armyRoster = [];
+    }
     
     // Clear old units if restarting
     this.playerUnits = [];
     this.enemyUnits = [];
     this.selectedUnits = [];
+    this.resourceNodes = [];
+    
+    // Initialize economy
+    this.playerResources = { 
+      biomass: GAME_CONSTANTS.STARTING_BIOMASS, 
+      dna: GAME_CONSTANTS.STARTING_DNA 
+    };
+    this.enemyResources = { 
+      biomass: GAME_CONSTANTS.STARTING_BIOMASS, 
+      dna: GAME_CONSTANTS.STARTING_DNA 
+    };
+    this.dnaTrickleTimer = 0;
     
     // Destroy old fog/minimap if they exist
     if (this.fogOfWar) {
@@ -59,31 +101,39 @@ export class BattleScene extends Phaser.Scene {
     if (this.minimap) {
       this.minimap.destroy();
     }
-    
-    this.registry.set('lastHybrid', data.hybrid);
 
     this.add.rectangle(this.MAP_WIDTH / 2, this.MAP_HEIGHT / 2, this.MAP_WIDTH, this.MAP_HEIGHT, 0x1a3a1a);
     
     const cam = this.cameras.main;
-    // Clamp camera to actual map area to prevent panning into black void
-    // Map goes from (0, 0) to (MAP_WIDTH, MAP_HEIGHT)
     cam.setBounds(0, 0, this.MAP_WIDTH, this.MAP_HEIGHT);
     cam.setZoom(1);
 
     this.fogOfWar = new FogOfWar(this, this.MAP_WIDTH, this.MAP_HEIGHT);
 
-    this.spawnPlayerArmy(data.hybrid);
+    // Spawn economy structures first
+    this.spawnHQs();
+    this.spawnResourceNodes();
+    this.spawnWorkers();
+    
+    // Spawn starting combat army (small starting force)
+    if (this.armyRoster.length > 0) {
+      this.spawnPlayerArmy(this.armyRoster[0]);
+    }
     this.spawnEnemyArmy();
 
-    cam.centerOn(this.playerUnits[0].x, this.playerUnits[0].y);
+    // Center camera on player HQ
+    cam.centerOn(this.playerHQ.x, this.playerHQ.y);
 
     this.minimap = new Minimap(this, this.MAP_WIDTH, this.MAP_HEIGHT);
 
-    this.ai = new AI(this.enemyUnits, this.playerUnits);
+    this.ai = new AI(this.enemyUnits, this.playerUnits, this.enemyHQ, this.enemyResources, this.resourceNodes);
 
     this.setupUI();
     this.setupInput();
     this.setupKeyboard();
+    
+    // Listen for resource gathering events
+    this.events.on('resource-gathered', this.onResourceGathered, this);
 
     if (!this.onboardingShown) {
       this.time.delayedCall(500, () => {
@@ -102,6 +152,9 @@ export class BattleScene extends Phaser.Scene {
       fontFamily: 'Arial',
       shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
     }).setOrigin(0.5).setScrollFactor(0);
+
+    // Resource counters
+    this.createResourceUI();
 
     // Player label with background and shadow
     this.add.rectangle(100, 68, 80, 28, 0x000000, 0.6).setOrigin(0, 0.5).setScrollFactor(0);
@@ -128,6 +181,167 @@ export class BattleScene extends Phaser.Scene {
     this.rivalHPBar = this.add.graphics().setScrollFactor(0);
 
     this.createSelectedUnitPanel();
+    this.createTrainPanel();
+  }
+  
+  private createResourceUI(): void {
+    const bgWidth = 200;
+    const bgHeight = 30;
+    const startX = 400 - bgWidth / 2;
+    const startY = 60;
+    
+    this.add.rectangle(400, startY, bgWidth, bgHeight, 0x000000, 0.8).setScrollFactor(0);
+    
+    const biomassText = this.add.text(startX + 10, startY, `${strings.economy.biomass}: ${this.playerResources.biomass}`, {
+      fontSize: '14px',
+      color: '#22C55E',
+      fontFamily: 'Arial',
+      fontStyle: 'bold'
+    }).setOrigin(0, 0.5).setScrollFactor(0);
+    
+    const dnaText = this.add.text(startX + 110, startY, `${strings.economy.dna}: ${this.playerResources.dna}`, {
+      fontSize: '14px',
+      color: '#9b59b6',
+      fontFamily: 'Arial',
+      fontStyle: 'bold'
+    }).setOrigin(0, 0.5).setScrollFactor(0);
+    
+    this.resourceTexts = { biomass: biomassText, dna: dnaText };
+  }
+  
+  private createTrainPanel(): void {
+    this.trainPanel = this.add.container(0, 0).setScrollFactor(0).setDepth(100);
+    
+    const panelX = 50;
+    const panelY = 150;
+    const panelWidth = 180;
+    const panelHeight = 300;
+    
+    const bg = this.add.rectangle(panelX, panelY, panelWidth, panelHeight, 0x000000, 0.85)
+      .setOrigin(0, 0).setScrollFactor(0);
+    this.trainPanel.add(bg);
+    
+    const title = this.add.text(panelX + panelWidth / 2, panelY + 15, strings.panel.train, {
+      fontSize: '18px',
+      color: '#ffffff',
+      fontFamily: 'Arial',
+      fontStyle: 'bold'
+    }).setOrigin(0.5, 0).setScrollFactor(0);
+    this.trainPanel.add(title);
+    
+    // P0: Worker + 3 cheap units only (Bat-Echo, Horn-Deer, Quill-Snake)
+    const p0Units: Array<{ name: string; cost: { dna: number; biomass: number }; type: 'worker' | 'unit' | 'archetype'; hybrid?: HybridCreature; archetype?: AnimalArchetype }> = [
+      { name: strings.panel.worker, cost: { dna: GAME_CONSTANTS.WORKER_COST_DNA, biomass: GAME_CONSTANTS.WORKER_COST_BIOMASS }, type: 'worker' },
+      ...this.armyRoster.filter(h => 
+        h.parent1.id === 'bat-echo' || h.parent2.id === 'bat-echo' ||
+        h.parent1.id === 'horn-deer' || h.parent2.id === 'horn-deer' ||
+        h.parent1.id === 'quill-snake' || h.parent2.id === 'quill-snake'
+      ).slice(0, 3).map(h => ({ name: h.name, cost: { dna: h.costDNA, biomass: h.costBiomass }, type: 'unit' as const, hybrid: h }))
+    ];
+    
+    // If no matching P0 units in roster, add defaults
+    if (p0Units.length < 4) {
+      const batEcho = ANIMAL_ARCHETYPES.find(a => a.id === 'bat-echo');
+      const hornDeer = ANIMAL_ARCHETYPES.find(a => a.id === 'horn-deer');
+      const quillSnake = ANIMAL_ARCHETYPES.find(a => a.id === 'quill-snake');
+      
+      if (batEcho && p0Units.length === 1) {
+        p0Units.push({ name: batEcho.nameHebrew, cost: { dna: batEcho.costDNA, biomass: batEcho.costBiomass }, type: 'archetype', archetype: batEcho });
+      }
+      if (hornDeer && p0Units.length === 2) {
+        p0Units.push({ name: hornDeer.nameHebrew, cost: { dna: hornDeer.costDNA, biomass: hornDeer.costBiomass }, type: 'archetype', archetype: hornDeer });
+      }
+      if (quillSnake && p0Units.length === 3) {
+        p0Units.push({ name: quillSnake.nameHebrew, cost: { dna: quillSnake.costDNA, biomass: quillSnake.costBiomass }, type: 'archetype', archetype: quillSnake });
+      }
+    }
+    
+    // Store unit data for refresh
+    this.trainPanelUnits = p0Units;
+    
+    let yOffset = 50;
+    for (let i = 0; i < p0Units.length; i++) {
+      const unitData = p0Units[i];
+      const unitY = panelY + yOffset + i * 60;
+      
+      const canAfford = this.playerResources.dna >= unitData.cost.dna && 
+                       this.playerResources.biomass >= unitData.cost.biomass;
+      
+      const unitBtn = this.add.rectangle(panelX + panelWidth / 2, unitY, 160, 50, canAfford ? 0x2DD4BF : 0x666666, 0.8)
+        .setInteractive({ useHandCursor: canAfford }).setScrollFactor(0)
+        .setData('unitIndex', i);
+      this.trainPanel.add(unitBtn);
+      
+      const unitName = this.add.text(panelX + panelWidth / 2, unitY - 10, unitData.name, {
+        fontSize: '13px',
+        color: canAfford ? '#ffffff' : '#888888',
+        fontFamily: 'Arial',
+        fontStyle: 'bold'
+      }).setOrigin(0.5).setScrollFactor(0)
+        .setData('unitIndex', i);
+      this.trainPanel.add(unitName);
+      
+      const unitCostText = this.add.text(panelX + panelWidth / 2, unitY + 10, `${unitData.cost.dna}D ${unitData.cost.biomass}B`, {
+        fontSize: '11px',
+        color: canAfford ? '#ffffff' : '#666666',
+        fontFamily: 'Arial'
+      }).setOrigin(0.5).setScrollFactor(0)
+        .setData('unitIndex', i);
+      this.trainPanel.add(unitCostText);
+      
+      unitBtn.on('pointerdown', () => {
+        const affordable = this.playerResources.dna >= unitData.cost.dna && 
+                          this.playerResources.biomass >= unitData.cost.biomass;
+        if (!affordable) {
+          // Show "not enough resources" feedback
+          return;
+        }
+        
+        if (unitData.type === 'worker') {
+          this.trainWorker();
+        } else if (unitData.type === 'unit' && unitData.hybrid) {
+          this.selectedUnitToTrain = unitData.hybrid;
+          this.trainCombatUnit();
+        } else if (unitData.type === 'archetype' && unitData.archetype) {
+          this.trainArchetype(unitData.archetype);
+        }
+      });
+    }
+  }
+  
+  private refreshTrainPanel(): void {
+    if (!this.trainPanel || !this.trainPanelUnits) return;
+    
+    const panelY = 150;
+    let yOffset = 50;
+    
+    // Update each button's affordability state
+    this.trainPanel.iterate((child: Phaser.GameObjects.GameObject) => {
+      if (!child.getData('unitIndex') && child.getData('unitIndex') !== 0) return;
+      
+      const idx = child.getData('unitIndex');
+      const unitData = this.trainPanelUnits[idx];
+      if (!unitData) return;
+      
+      const canAfford = this.playerResources.dna >= unitData.cost.dna && 
+                       this.playerResources.biomass >= unitData.cost.biomass;
+      
+      if (child instanceof Phaser.GameObjects.Rectangle) {
+        // Update button color and interactivity
+        child.setFillStyle(canAfford ? 0x2DD4BF : 0x666666, 0.8);
+        child.setInteractive({ useHandCursor: canAfford });
+      } else if (child instanceof Phaser.GameObjects.Text) {
+        // Update text color
+        const unitY = panelY + yOffset + idx * 60;
+        if (Math.abs(child.y - (unitY - 10)) < 1) {
+          // Name text
+          child.setColor(canAfford ? '#ffffff' : '#888888');
+        } else if (Math.abs(child.y - (unitY + 10)) < 1) {
+          // Cost text
+          child.setColor(canAfford ? '#ffffff' : '#666666');
+        }
+      }
+    });
   }
 
   private setupInput(): void {
@@ -201,6 +415,9 @@ export class BattleScene extends Phaser.Scene {
     this.input.off('gameout', this.onGameOut, this);
     this.input.off('gameover', this.onGameOver, this);
     
+    // Remove economy event listener
+    this.events.off('resource-gathered', this.onResourceGathered, this);
+    
     // Remove browser window/document listeners
     window.removeEventListener('blur', this.onWindowBlur);
     window.removeEventListener('focus', this.onWindowFocus);
@@ -254,6 +471,16 @@ export class BattleScene extends Phaser.Scene {
       if (!this.gameEnded) this.stopSelectedUnits();
     });
 
+    // Debug hotkey: K to force win modal (for QA when ?debug=1)
+    this.input.keyboard!.on('keydown-K', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('debug') === '1') {
+        console.log('[DEBUG] Force win triggered via K key');
+        this.gameEnded = true;
+        this.scene.start('GameOverScene', { victory: true, message: strings.win.destroyBase });
+      }
+    });
+
     this.input.keyboard!.on('keydown-DELETE', () => {
       if (!this.gameEnded) this.stopSelectedUnits();
     });
@@ -287,49 +514,248 @@ export class BattleScene extends Phaser.Scene {
     }
   }
 
+  private spawnHQs(): void {
+    // Player HQ on the left
+    const playerHQX = 200;
+    const playerHQY = this.MAP_HEIGHT / 2;
+    this.playerHQ = new Building(this, playerHQX, playerHQY, 'player', strings.economy.hq);
+    
+    // Enemy HQ on the right
+    const enemyHQX = this.MAP_WIDTH - 200;
+    const enemyHQY = this.MAP_HEIGHT / 2;
+    this.enemyHQ = new Building(this, enemyHQX, enemyHQY, 'enemy', strings.economy.hq);
+  }
+  
+  private spawnResourceNodes(): void {
+    const nodes: ResourceNodeType[] = [
+      // Left side (near player) - biomass only
+      { id: 'b1', type: 'biomass', x: 400, y: 400, amount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT, maxAmount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT },
+      { id: 'b2', type: 'biomass', x: 500, y: this.MAP_HEIGHT - 400, amount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT, maxAmount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT },
+      
+      // Center - biomass only
+      { id: 'b3', type: 'biomass', x: this.MAP_WIDTH / 2, y: 350, amount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT, maxAmount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT },
+      { id: 'b4', type: 'biomass', x: this.MAP_WIDTH / 2, y: this.MAP_HEIGHT - 350, amount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT, maxAmount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT },
+      
+      // Right side (near enemy) - biomass only
+      { id: 'b5', type: 'biomass', x: this.MAP_WIDTH - 400, y: 400, amount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT, maxAmount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT },
+      { id: 'b6', type: 'biomass', x: this.MAP_WIDTH - 500, y: this.MAP_HEIGHT - 400, amount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT, maxAmount: GAME_CONSTANTS.RESOURCE_NODE_BIOMASS_AMOUNT },
+    ];
+    
+    for (const nodeData of nodes) {
+      const node = new ResourceNode(this, nodeData);
+      this.resourceNodes.push(node);
+    }
+    
+    // Note: Player-side nodes will be visible through initial fog update with player units nearby
+  }
+  
+  private spawnWorkers(): void {
+    // Spawn player workers near player HQ
+    for (let i = 0; i < GAME_CONSTANTS.STARTING_WORKERS; i++) {
+      const angle = (i / GAME_CONSTANTS.STARTING_WORKERS) * Math.PI * 2;
+      const radius = 80;
+      const x = this.playerHQ.x + Math.cos(angle) * radius;
+      const y = this.playerHQ.y + Math.sin(angle) * radius;
+      
+      const workerCreature = this.createWorkerCreature();
+      const worker = new Unit(this, x, y, workerCreature, 'player', 'worker', this.playerHQ);
+      this.playerUnits.push(worker);
+    }
+    
+    // Spawn enemy workers near enemy HQ
+    for (let i = 0; i < GAME_CONSTANTS.STARTING_WORKERS; i++) {
+      const angle = (i / GAME_CONSTANTS.STARTING_WORKERS) * Math.PI * 2;
+      const radius = 80;
+      const x = this.enemyHQ.x + Math.cos(angle) * radius;
+      const y = this.enemyHQ.y + Math.sin(angle) * radius;
+      
+      const workerCreature = this.createWorkerCreature();
+      const worker = new Unit(this, x, y, workerCreature, 'enemy', 'worker', this.enemyHQ);
+      this.enemyUnits.push(worker);
+    }
+  }
+  
+  private createWorkerCreature(): HybridCreature {
+    // Simple worker stats
+    return {
+      id: 'worker',
+      parent1: ANIMAL_ARCHETYPES[0],
+      parent2: ANIMAL_ARCHETYPES[1],
+      name: strings.economy.worker,
+      hp: 50,
+      speed: 5,
+      attack: 1,
+      range: 1,
+      vision: 6,
+      specialPrimary: '',
+      specialSecondary: '',
+      primaryColor: '#FACC15',
+      secondaryColor: '#854D0E',
+      costDNA: 0,
+      costBiomass: 0
+    };
+  }
+
   private spawnPlayerArmy(hybrid: HybridCreature): void {
-    const unitCount = 8;
-    const startX = 300;
-    const startY = this.MAP_HEIGHT / 2;
+    const unitCount = 3; // Reduced initial army, economy will produce more
+    const startX = this.playerHQ.x + 150;
+    const startY = this.playerHQ.y;
     const spacing = 70;
 
     for (let i = 0; i < unitCount; i++) {
-      const col = i % 4;
-      const row = Math.floor(i / 4);
+      const row = Math.floor(i / 2);
+      const col = i % 2;
       const x = startX + col * spacing;
-      const y = startY - 100 + row * spacing;
+      const y = startY - 50 + row * spacing;
       
-      const unit = new Unit(this, x, y, hybrid, 'player');
+      const unit = new Unit(this, x, y, hybrid, 'player', 'combat');
       this.playerUnits.push(unit);
     }
   }
 
   private spawnEnemyArmy(): void {
-    const enemyCount = Math.min(6, Math.max(3, this.playerUnits.length));
-    const spawnPoints = [
-      { x: this.MAP_WIDTH - 400, y: this.MAP_HEIGHT / 2 - 200 },
-      { x: this.MAP_WIDTH - 350, y: this.MAP_HEIGHT / 2 - 100 },
-      { x: this.MAP_WIDTH - 400, y: this.MAP_HEIGHT / 2 },
-      { x: this.MAP_WIDTH - 350, y: this.MAP_HEIGHT / 2 + 100 },
-      { x: this.MAP_WIDTH - 400, y: this.MAP_HEIGHT / 2 + 200 },
-      { x: this.MAP_WIDTH - 450, y: this.MAP_HEIGHT / 2 + 300 }
-    ];
+    const enemyCount = 2; // Reduced initial army
+    const spawnX = this.enemyHQ.x - 150;
+    const spawnY = this.enemyHQ.y;
+    const spacing = 70;
 
     for (let i = 0; i < enemyCount; i++) {
       const animal1 = Phaser.Math.RND.pick(ANIMAL_ARCHETYPES);
       const animal2 = Phaser.Math.RND.pick(ANIMAL_ARCHETYPES.filter(a => a.id !== animal1.id));
       const hybrid = GameData.createHybrid(animal1, animal2);
 
-      const spawnPoint = spawnPoints[i];
-      const unit = new Unit(this, spawnPoint.x, spawnPoint.y, hybrid, 'enemy');
+      const x = spawnX - (i % 2) * spacing;
+      const y = spawnY - 50 + Math.floor(i / 2) * spacing;
+      const unit = new Unit(this, x, y, hybrid, 'enemy', 'combat');
       this.enemyUnits.push(unit);
+    }
+  }
+  
+  private onResourceGathered(data: { team: 'player' | 'enemy'; amount: number }): void {
+    if (data.team === 'player') {
+      this.playerResources.biomass += data.amount;
+      console.log(`[BIOMASS] Player gathered ${data.amount}, total: ${this.playerResources.biomass}`);
+      this.updateResourceUI();
+    } else {
+      this.enemyResources.biomass += data.amount;
+      console.log(`[BIOMASS] Enemy gathered ${data.amount}, total: ${this.enemyResources.biomass}`);
+    }
+  }
+  
+  private updateResourceUI(): void {
+    if (this.resourceTexts) {
+      this.resourceTexts.biomass.setText(`${strings.economy.biomass}: ${this.playerResources.biomass}`);
+      this.resourceTexts.dna.setText(`${strings.economy.dna}: ${this.playerResources.dna}`);
+    }
+    // Blocker 1 fix: Refresh train panel affordability whenever resources change
+    this.refreshTrainPanel();
+  }
+  
+  private trainWorker(): void {
+    if (this.playerResources.dna >= GAME_CONSTANTS.WORKER_COST_DNA &&
+        this.playerResources.biomass >= GAME_CONSTANTS.WORKER_COST_BIOMASS) {
+      this.playerResources.dna -= GAME_CONSTANTS.WORKER_COST_DNA;
+      this.playerResources.biomass -= GAME_CONSTANTS.WORKER_COST_BIOMASS;
+      this.updateResourceUI();
+      
+      // Spawn worker near HQ
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 80;
+      const x = this.playerHQ.x + Math.cos(angle) * radius;
+      const y = this.playerHQ.y + Math.sin(angle) * radius;
+      
+      const workerCreature = this.createWorkerCreature();
+      const worker = new Unit(this, x, y, workerCreature, 'player', 'worker', this.playerHQ);
+      this.playerUnits.push(worker);
+      
+      // Nice-to-have: Auto-assign to nearest biomass node (like AI)
+      const nearestNode = this.findNearestResourceNode(worker);
+      if (nearestNode && !nearestNode.isEmpty()) {
+        worker.orderGather(nearestNode);
+      }
+    }
+  }
+  
+  private findNearestResourceNode(worker: Unit): ResourceNode | null {
+    let nearest: ResourceNode | null = null;
+    let minDistance = Infinity;
+    
+    for (const node of this.resourceNodes) {
+      if (node.isEmpty()) continue;
+      
+      const distance = Phaser.Math.Distance.Between(worker.x, worker.y, node.x, node.y);
+      if (distance < minDistance) {
+        minDistance = distance;
+        nearest = node;
+      }
+    }
+    
+    return nearest;
+  }
+  
+  private trainCombatUnit(): void {
+    // Use the selected unit from army roster
+    const hybrid = this.selectedUnitToTrain || this.armyRoster[0];
+    
+    if (!hybrid) return;
+    
+    if (this.playerResources.dna >= hybrid.costDNA &&
+        this.playerResources.biomass >= hybrid.costBiomass) {
+      this.playerResources.dna -= hybrid.costDNA;
+      this.playerResources.biomass -= hybrid.costBiomass;
+      this.updateResourceUI();
+      
+      // Spawn unit near HQ
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 100;
+      const x = this.playerHQ.x + Math.cos(angle) * radius;
+      const y = this.playerHQ.y + Math.sin(angle) * radius;
+      
+      const unit = new Unit(this, x, y, hybrid, 'player', 'combat');
+      this.playerUnits.push(unit);
+    }
+  }
+  
+  private trainArchetype(archetype: AnimalArchetype): void {
+    if (this.playerResources.dna >= archetype.costDNA &&
+        this.playerResources.biomass >= archetype.costBiomass) {
+      this.playerResources.dna -= archetype.costDNA;
+      this.playerResources.biomass -= archetype.costBiomass;
+      this.updateResourceUI();
+      
+      // Create a simple single-archetype "hybrid" for this unit
+      const archetypeHybrid: HybridCreature = {
+        id: `archetype_${archetype.id}_${Date.now()}`,
+        parent1: archetype,
+        parent2: archetype,
+        name: archetype.nameHebrew,
+        hp: archetype.hp,
+        speed: archetype.speed,
+        attack: archetype.attack,
+        range: archetype.range,
+        vision: archetype.vision,
+        specialPrimary: archetype.special,
+        specialSecondary: '',
+        primaryColor: archetype.primaryColor,
+        secondaryColor: archetype.secondaryColor,
+        costDNA: archetype.costDNA,
+        costBiomass: archetype.costBiomass
+      };
+      
+      // Spawn unit near HQ
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 100;
+      const x = this.playerHQ.x + Math.cos(angle) * radius;
+      const y = this.playerHQ.y + Math.sin(angle) * radius;
+      
+      const unit = new Unit(this, x, y, archetypeHybrid, 'player', 'combat');
+      this.playerUnits.push(unit);
     }
   }
 
   private onPointerDown(pointer: Phaser.Input.Pointer): void {
     if (this.gameEnded || this.helpOverlay) return;
     
-    // Use camera.getWorldPoint for reliable world coordinate conversion
     const cam = this.cameras.main;
     const worldPoint = cam.getWorldPoint(pointer.x, pointer.y);
     const worldX = worldPoint.x;
@@ -358,9 +784,32 @@ export class BattleScene extends Phaser.Scene {
         this.clearSelection();
       }
     } else if (pointer.rightButtonDown()) {
-      this.issueOrderToSelected(worldX, worldY);
-      this.showClickMarker(worldX, worldY);
+      // Check if clicking on a resource node
+      const clickedNode = this.getResourceNodeAtPosition(worldX, worldY);
+      if (clickedNode && !clickedNode.isEmpty()) {
+        // Order selected workers to gather
+        const workers = this.selectedUnits.filter(u => u.role === 'worker');
+        for (const worker of workers) {
+          worker.orderGather(clickedNode);
+        }
+        this.showClickMarker(worldX, worldY);
+      } else {
+        // Normal move/attack order
+        this.issueOrderToSelected(worldX, worldY);
+        this.showClickMarker(worldX, worldY);
+      }
     }
+  }
+  
+  private getResourceNodeAtPosition(x: number, y: number): ResourceNode | null {
+    for (const node of this.resourceNodes) {
+      const distance = Phaser.Math.Distance.Between(x, y, node.x, node.y);
+      // Increased hit area for new larger hexagonal nodes
+      if (distance < 40) {
+        return node;
+      }
+    }
+    return null;
   }
 
   private onPointerMove(pointer: Phaser.Input.Pointer): void {
@@ -435,6 +884,26 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private issueOrderToSelected(x: number, y: number): void {
+    // Check if clicking on enemy HQ (make HQs clearly attackable)
+    if (this.enemyHQ) {
+      const distanceToHQ = Phaser.Math.Distance.Between(x, y, this.enemyHQ.x, this.enemyHQ.y);
+      if (distanceToHQ < 60) {
+        // Order combat units to attack enemy HQ
+        for (const unit of this.selectedUnits) {
+          this.tweens.killTweensOf(unit);
+          if (unit.role === 'combat') {
+            unit.moveToPosition(this.enemyHQ.x, this.enemyHQ.y);
+            unit.targetEnemy = null; // Clear old target
+          } else {
+            // Workers just move
+            unit.moveToPosition(x, y);
+            unit.targetEnemy = null;
+          }
+        }
+        return;
+      }
+    }
+    
     const targetUnit = this.getUnitAtPosition(x, y);
 
     for (const unit of this.selectedUnits) {
@@ -490,6 +959,15 @@ export class BattleScene extends Phaser.Scene {
   update(_time: number, delta: number): void {
     if (!this.gameEnded) {
       this.updateCameraPan(delta);
+      
+      // DNA trickle for both teams
+      this.dnaTrickleTimer += delta;
+      if (this.dnaTrickleTimer >= GAME_CONSTANTS.DNA_TRICKLE_INTERVAL) {
+        this.dnaTrickleTimer -= GAME_CONSTANTS.DNA_TRICKLE_INTERVAL;
+        this.playerResources.dna += GAME_CONSTANTS.DNA_TRICKLE_RATE;
+        this.enemyResources.dna += GAME_CONSTANTS.DNA_TRICKLE_RATE;
+        this.updateResourceUI();
+      }
     }
 
     this.playerUnits = this.playerUnits.filter(unit => {
@@ -515,7 +993,7 @@ export class BattleScene extends Phaser.Scene {
 
     this.fogOfWar.update(this.playerUnits);
 
-    this.minimap.update(this.playerUnits, this.enemyUnits, this.cameras.main);
+    this.minimap.update(this.playerUnits, this.enemyUnits, this.cameras.main, this.playerHQ, this.enemyHQ, this.resourceNodes);
 
     for (const enemy of this.enemyUnits) {
       enemy.setVisible(this.fogOfWar.isVisible(enemy.x, enemy.y));
@@ -529,6 +1007,43 @@ export class BattleScene extends Phaser.Scene {
         unit.targetEnemy = nearest;
         if (nearest) {
           unit.moveToPosition(nearest.x, nearest.y);
+        }
+      }
+
+      // Combat units can attack enemy HQ
+      if (unit.role === 'combat') {
+        const enemyHQ = unit.team === 'player' ? this.enemyHQ : this.playerHQ;
+        const distanceToHQ = Phaser.Math.Distance.Between(unit.x, unit.y, enemyHQ.x, enemyHQ.y);
+        
+        // Auto-attack nearby enemy HQ if in range (fixed range calculation)
+        if (distanceToHQ <= unit.creature.range + 50) {
+          if (unit.attackCooldown <= 0) {
+            console.log(`[HQ ATTACK] ${unit.team} unit attacking HQ at distance ${distanceToHQ.toFixed(1)}, damage: ${unit.creature.attack}`);
+            const destroyed = enemyHQ.takeDamage(unit.creature.attack);
+            unit.attackCooldown = 1000;
+            
+            console.log(`[HQ HP] Enemy HQ HP: ${enemyHQ.currentHp}/${enemyHQ.maxHp}, destroyed: ${destroyed}`);
+            
+            // Trigger win/lose immediately when HQ destroyed
+            if (destroyed) {
+              this.gameEnded = true;
+              console.log(`[WIN/LOSE] HQ destroyed! Team ${unit.team} wins!`);
+              
+              if (unit.team === 'player') {
+                console.log('[WIN] Showing victory screen with message:', strings.win.destroyBase);
+                this.time.delayedCall(100, () => {
+                  this.scene.start('GameOverScene', { victory: true, message: strings.win.destroyBase });
+                });
+              } else {
+                console.log('[LOSE] Showing defeat screen with message:', strings.lose.baseDown);
+                this.time.delayedCall(100, () => {
+                  this.scene.start('GameOverScene', { victory: false, message: strings.lose.baseDown });
+                });
+              }
+              return;
+            }
+          }
+          continue; // Don't also attack units when attacking HQ
         }
       }
 
@@ -553,12 +1068,25 @@ export class BattleScene extends Phaser.Scene {
     this.ai.update();
 
     if (!this.gameEnded) {
-      if (this.playerUnits.length === 0) {
+      // Check for HQ destruction first (primary win condition)
+      if (this.playerHQ.currentHp <= 0) {
+        this.gameEnded = true;
+        this.time.delayedCall(500, () => {
+          this.scene.start('GameOverScene', { victory: false, message: strings.lose.baseDown });
+        });
+      } else if (this.enemyHQ.currentHp <= 0) {
+        this.gameEnded = true;
+        this.time.delayedCall(500, () => {
+          this.scene.start('GameOverScene', { victory: true, message: strings.win.destroyBase });
+        });
+      }
+      // Fallback: army wipeout
+      else if (this.playerUnits.length === 0) {
         this.gameEnded = true;
         this.time.delayedCall(500, () => {
           this.scene.start('GameOverScene', { victory: false });
         });
-      } else if (this.enemyUnits.length === 0) {
+      } else if (this.enemyUnits.length === 0 && this.enemyHQ.currentHp <= 0) {
         this.gameEnded = true;
         this.time.delayedCall(500, () => {
           this.scene.start('GameOverScene', { victory: true });

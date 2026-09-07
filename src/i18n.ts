@@ -60,7 +60,7 @@ export const strings = {
     forge: 'בחר שני יצורים — המזקקה תיצור מהם היבריד לקרב.',
     afterMerge: 'ההיבריד מוכן. לחץ לזירה כדי לפרוס אותו.',
     deploy: 'אתה משמאל (טורקיז), היריב מימין. לחץ התחל קרב.',
-    battle: 'בחר יחידה והזז אותה בעכבר. עקוב אחרי סרגל החיים למעלה.',
+    battle: 'אסוף ביומסה בפועלים, אמן יחידות מהבסיס, השמד את בסיס היריב.',
     cameraFog: 'הזז את המצלמה ב־WASD. השטח הכהה במפה עדיין מוסתר בערפל.',
     dismiss: 'הבנתי'
   },
@@ -87,6 +87,46 @@ export const strings = {
     otherEsc: 'Esc - בטל בחירה',
     otherHelp: 'F1 / ? - עזרה',
     close: 'סגור'
+  },
+  hud: {
+    dna: 'DNA',
+    biomass: 'ביומסה',
+    baseHp: 'בסיס'
+  },
+  panel: {
+    train: 'אמן',
+    worker: 'פועל',
+    needRes: 'אין מספיק משאבים'
+  },
+  zoo: {
+    title: 'הכלוב',
+    slotEmpty: 'ריק',
+    cta: 'לזירה'
+  },
+  win: {
+    destroyBase: 'הבסיס נהרס — ניצחת!',
+    title: 'ניצחון!'
+  },
+  lose: {
+    baseDown: 'הבסיס שלך נהרס',
+    title: 'הפסד'
+  },
+  economy: {
+    biomass: 'ביומסה',
+    biomassEn: 'Biomass',
+    dna: 'DNA',
+    dnaEn: 'DNA',
+    resources: 'משאבים',
+    trainWorker: 'אמן עובד',
+    trainUnit: 'אמן לוחם',
+    worker: 'עובד',
+    gathering: 'אוסף',
+    returning: 'חוזר',
+    hq: 'מטה ראשי',
+    hqDestroyed: 'המטה הושמד!',
+    notEnoughResources: 'אין מספיק משאבים',
+    workerInfo: 'עובד - אוסף ביומסה',
+    unitInfo: 'לוחם - יחידת קרב'
   }
 };
 
